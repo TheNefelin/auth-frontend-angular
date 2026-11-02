@@ -1,7 +1,12 @@
-# AGENTS.md — frontend-python (Angular 21+)
+<!-- agent-baseline:start -->
+# AGENTS.md
 
-> Las reglas de este proyecto viven en `.baseline/AGENTS.md`. Leelas antes de tocar código.
-> Instalado con agent-baseline 0.1.1. No edites este bloque: edita `.baseline/AGENTS.md`.
+> Las reglas de este proyecto viven en `.baseline/AGENTS.md`. Leelas antes de tocar codigo.
+> Skills instaladas: `angular`, `memoria` en `.baseline/skills/<nombre>/SKILL.md`. Antes de escribir codigo de ese stack, abre la que corresponda y sigue sus reglas.
+> Instalado con agent-baseline 0.2.2. No edites este bloque: edita `.baseline/AGENTS.md`.
+<!-- agent-baseline:end -->
+
+# AGENTS.md — frontend-python (Angular 21+)
 
 ## Stack
 
