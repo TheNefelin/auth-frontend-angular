@@ -62,7 +62,7 @@ export class AuthGoogleService {
     return new Promise((resolve, reject) => {
       const oauth2 = getGoogle()?.accounts?.oauth2;
       if (!oauth2?.initTokenClient) {
-        reject('Google OAuth2 no disponible');
+        reject(new Error('Google OAuth2 no disponible'));
         return;
       }
 
@@ -73,7 +73,7 @@ export class AuthGoogleService {
           if (response.access_token) {
             resolve(response.access_token);
           } else {
-            reject(response.error || 'No se recibió access_token');
+            reject(new Error(response.error || 'No se recibió access_token'));
           }
         },
         error_callback: (error) => {
@@ -86,17 +86,20 @@ export class AuthGoogleService {
     });
   }
 
-  // 🔹 Espera interna hasta que scriptReady sea true
+  // 🔹 Espera interna hasta que scriptReady sea true (timeout de 10s)
   private waitForScript(): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      const started = Date.now();
       const check = () => {
         if (this.scriptReady()) {
           resolve();
+        } else if (Date.now() - started >= 10_000) {
+          reject(new Error('Google Identity Services no se cargó después de 10 segundos. Revisa que el script esté en index.html'));
         } else {
           setTimeout(check, 100);
         }
       };
       check();
     });
-  } 
+  }
 }

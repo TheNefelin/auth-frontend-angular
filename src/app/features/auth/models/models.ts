@@ -21,24 +21,11 @@ export interface GoogleAccounts {
 }
 
 export interface ApiAuthGoogleRequest {
-  googleToken: string
+  googleToken: string;
 }
 
 export interface ApiAuthGoogleResponse {
-  token: string,
-  user: AuthUser
-}
-
-export interface AuthUser {
-  id_user: string,
-  email: string,
-  name?: string,
-  picture?: string,
-  profileComplete: boolean,
-  role: Role,
-}
-
-export enum Role {
-  Admin = 'Admin',
-  Reader = 'Lector'
+  access_token: string;
+  token_type: string;
+  expires_in: number;
 }

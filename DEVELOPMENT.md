@@ -67,6 +67,7 @@ frontend-python/
 | Un `MutationService` para escrituras | Un solo patrón de guardado, error y cierre de modal |
 | `OnPush` en todo | Menos detección de cambios, mejor rendimiento |
 | Sin `NgModule`, sin `*ngIf`/`*ngFor` | Piso Angular 21+, control flow `@if`/`@for` |
+| DTO `/auth/google` espejo de la respuesta real (`access_token`); login conectado página→`AuthStore`; perfil vía `/auth/me` en la fase backend (Aceptado) | Contrato honesto con el backend actual; sin código muerto "para el futuro" |
 
 ---
 

@@ -5,26 +5,28 @@
 
 ## Tarea activo
 
-MVP del frontend Angular 21+ — por implementar.
+AUTH frontend (Google) — optimización y limpieza. Hecho: conexión real página→store, DTO real, muertos eliminados.
 
 ## Último avance comprobado
 
-Proyecto Angular existente. Estructura de documentación y baseline creada.
+- `AuthStore` (`auth-store.ts`, renombrado desde `auth-store.ts.ts`) cableado a la página; DTO `ApiAuthGoogleResponse` = `{ access_token, token_type, expires_in }`; `AuthUser`/`Role`/`currentUser` eliminados; JWT en localStorage; navegación única a HOME.
+- `waitForScript()` con timeout de 10s; rechazos como `Error`.
+- Muerto eliminado: `#googleBtn`, `ROUTES_CONSTANTS.AUTH`, doble `<use>` Apple, typos "wiith".
+- Verificación: `pnpm ng build` OK (2026-11-03). `pnpm lint` no existe en package.json.
 
 ## Archivos tocados
 
-- `frontend-python/` (AGENTS.md, DEVELOPMENT.md, SKILL.md, .baseline/)
+- `features/auth/services/auth-store.ts` (nuevo), `auth-store.ts.ts` (eliminado), `auth-google-service.ts`, `models/models.ts`, `pages/auth-page/*`, componentes apple/github, `shared/constants/routes-constant.ts`, DEVELOPMENT.md
 
 ## Pruebas ejecutadas y resultado real
 
-- Ninguna (proyecto en fase de configuración).
+- `pnpm ng build` → bundle completo, 2 prerendered routes. Sin tests (vitest no configurado).
 
 ## Bloqueos
 
-- Ninguno.
+- `ApiService.baseUrl` hardcodeado con doble slash (`http://127.0.0.1:8000//auth/google`) → probable 404 en el POST real. Fuera del alcance auth; pendiente autorización de una línea en `core/services/api-service.ts`.
+- `home-page.ts` logout no limpia `jwt_token` (fuera de auth). Pendiente.
 
 ## Siguiente paso
 
-- El usuario trabajará primero en Angular.
-- Revisar estructura Angular existente.
-- Conectar con endpoints reales del backend.
+- Decisión del usuario: fix `ApiService` (core) y/o logout en home; fase 2: backend (`/auth/me`, `user`/role en respuesta).
