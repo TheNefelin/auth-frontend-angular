@@ -1,0 +1,16 @@
+<div class="toast toast-end toast-bottom z-50" aria-live="polite">
+  @for (toast of toastService.toasts(); track toast.id) {
+    <div class="alert" [class.alert-success]="toast.type === 'success'" [class.alert-info]="toast.type === 'info'">
+      <span class="text-white font-bold">{{ toast.message }}</span>
+      
+      <button type="button" class="btn btn-ghost btn-xs text-white hover:text-black" aria-label="Cerrar" 
+        (click)="toastService.clear(toast.id)">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="size-4" aria-hidden="true">
+          <path d="M18 6 6 18"></path>
+          <path d="m6 6 12 12"></path>
+        </svg>
+      </button>
+    </div>
+  }
+</div>

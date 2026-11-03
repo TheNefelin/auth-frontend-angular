@@ -1,5 +1,7 @@
 <section class="grid gap-2 justify-center items-center p-4">
   
+  <div #googleBtn></div>
+  
   <app-auth-google-component [loading]="loadingGoogle()" [disabled]="disabled()" (login)="loginGoogle()"/>
   <app-auth-github-component [loading]="loadingGitHub()" [disabled]="disabled()" (login)="loginGitHub()"/>
   <app-auth-apple-component [loading]="loadingApple()" [disabled]="disabled()" (login)="loginApple()"/>
