@@ -6,13 +6,15 @@ import { Role, AuthUser, ApiAuthGoogleRequest, ApiAuthGoogleResponse } from '@fe
 import { AuthGoogleService } from '@features/auth/services/auth-google-service';
 import { AuthService } from '@features/auth/services/auth-service';
 import { firstValueFrom } from 'rxjs';
+import { ToastService } from '@core/services/toast-service';
 
 @Service()
 export class AuthStoreTs {
-  private router = inject(Router);
-  private googleAuth = inject(AuthGoogleService);
-  private apiAuth = inject(AuthService);
-  private errorModal = inject(ErrorService);
+  private readonly router = inject(Router);
+  private readonly googleAuth = inject(AuthGoogleService);
+  private readonly apiAuth = inject(AuthService);
+  private readonly errorService = inject(ErrorService);
+  private readonly toastService = inject(ToastService);
   
   // 🔹 Signals internas
   private currentUser = signal<AuthUser | null>(this.getStoredUser());
@@ -35,7 +37,7 @@ export class AuthStoreTs {
     }
   }
 
-   // 🔹 Login principal
+  // 🔹 Login principal
   async login(): Promise<void> {
     try {
       this.isLoading.set(true);
@@ -70,6 +72,7 @@ export class AuthStoreTs {
       }
 
       this.router.navigate([navigateTo]);
+      this.toastService.show('Inicio de sesión exitoso', 'success');
     } catch (error: unknown) {
       const status = typeof error === 'object' && error !== null && 'status' in error
         ? Number((error as { status: unknown }).status) || 0
@@ -78,7 +81,7 @@ export class AuthStoreTs {
         || (error instanceof Error && error.message)
         || 'Error al iniciar sesión. Intenta nuevamente.';
 
-      //this.errorModal.openError(status, message);
+      this.errorService.show(message);
     } finally {
       this.isLoading.set(false);
     }

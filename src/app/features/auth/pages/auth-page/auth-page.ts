@@ -14,7 +14,7 @@ import { ROUTES_CONSTANTS } from "@shared/constants/routes-constant";
 })
 export class AuthPage {
   private readonly router = inject(Router);
-  private readonly authGoogle = inject(AuthGoogleService);
+  private readonly authGoogleService = inject(AuthGoogleService);
   
   protected readonly loadingAuth = signal<boolean>(false);
   protected readonly loadingApple = signal<boolean>(false);
@@ -36,7 +36,7 @@ export class AuthPage {
     this.loadingGoogle.set(true);
     this.disabled.set(true);
     try {
-      const idToken = await this.authGoogle.getAccessToken();
+      const idToken = await this.authGoogleService.getAccessToken();
       // Aquí puedes enviar el token al backend si es necesario
       console.log('Google ID Token obtenido:', idToken);
       // Redirigir o navegar tras login exitoso
