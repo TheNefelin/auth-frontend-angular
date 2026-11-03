@@ -35,23 +35,12 @@ export class AuthPage {
   protected readonly loadingGoogle = signal<boolean>(false);
   protected readonly disabled = signal<boolean>(false);
 
-  protected async loginAuth(): Promise<void> {
-    this.loadingAuth.set(true);
-    this.disabled.set(true);
-  }
-
-  protected async loginApple(): Promise<void> {
-    this.loadingApple.set(true);
-    this.disabled.set(true);
-  }
-
   protected async loginGoogle(): Promise<void> {
     this.loadingGoogle.set(true);
     this.disabled.set(true);
 
     try {
       const googleToken = await this.authGoogleService.getAccessToken();
-
       const request: ApiAuthGoogleRequest = { googleToken };
       const response = await firstValueFrom(this.authService.auth(request));
 
@@ -70,6 +59,16 @@ export class AuthPage {
 
   protected async loginGitHub(): Promise<void> {
     this.loadingGitHub.set(true);
+    this.disabled.set(true);
+  }
+
+  protected async loginApple(): Promise<void> {
+    this.loadingApple.set(true);
+    this.disabled.set(true);
+  }
+
+  protected async loginAuth(): Promise<void> {
+    this.loadingAuth.set(true);
     this.disabled.set(true);
   }
 

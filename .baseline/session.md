@@ -9,8 +9,14 @@ AUTH frontend (Google) — login funcionando extremo a extremo (verificado por e
 
 ## Último avance comprobado
 
-- `AuthStoreService` (`core/services/auth-store-service.ts`): estado mínimo — `setSession(token)`, `clearSession()`, `readStoredToken()` público (para el futuro interceptor). Sin signals (nada reactivo aún). Migración completa y verificada: la página inyecta el core; el servicio viejo de la feature fue eliminado; `pnpm ng build` OK (2026-11-03).
-- Nota: el borrado de la clave legacy `user` quedó fuera de `clearSession` (decisión del usuario: el flujo actual ya no la escribe). Login funciona extremo a extremo (verificado por el usuario).
+- `AuthStoreService` (`core/services/auth-store-service.ts`): `setSession/clearSession/readStoredToken()` público. Migración completa y verificada (página usa el core, servicio viejo borrado, `ng build` OK).
+- Lint/spec: `pnpm lint` no existe en package.json.
+- Login funciona e2e (usuario). Bug pendiente mañana: desactivar globalmente TODOS los botones al hacer click en cualquiera (solución propuesta: 1 interruptor `disabled()` compartido + `loginGoogle` que también lo levanta/baja).
+- Pendientes: `auth-store-service.ts` sin `USER_KEY` legacy (decisión del usuario), `readStoredToken` público ocioso hasta el interceptor, Tier 1 (interceptor Bearer, authGuard, logout de home), home-page no limpia JWT.
+
+## Archivos tocados
+
+- `src/app/core/services/auth-store-service.ts` (nuevo), `features/auth/services/auth-store.ts` (eliminado), `features/auth/pages/auth-page.ts`, `.baseline/session.md`
 
 ## Archivos tocados
 

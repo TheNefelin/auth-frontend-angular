@@ -9,5 +9,5 @@ import { LoadingComponent } from "@shared/components/loading-component/loading-c
 export class AuthGithubComponent {
   readonly loading = input<boolean>(false);
   readonly disabled = input<boolean>(false);
-  readonly login = output<void>();
+  readonly login = output<void>();  
 }
