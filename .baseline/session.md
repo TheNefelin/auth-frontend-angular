@@ -5,14 +5,12 @@
 
 ## Tarea activo
 
-AUTH frontend (Google) — arquitectura corregida. El login falla; el usuario depura con error real visible ahora.
+AUTH frontend (Google) — login funcionando extremo a extremo (verificado por el usuario 2026-11-03).
 
 ## Último avance comprobado
 
-- Arquitectura: la página orquesta (Google→API→store→navegar); `AuthStore` = estado puro (`token` + `isAuthenticated`, `setSession()`, `clear()`), sin Router/HTTP. `describeError()` traduce `HttpErrorResponse` (incluye `detail` de FastAPI) a toast legible; `LoggerService` (dev-only) loguea el error crudo.
-- Commit f8e5e06 hecho por el usuario; luego se agregó `provideHttpClient()` en `app.config.ts` y `baseUrl` sin doble slash (arreglado tras error de login).
-- Modelos `AuthUser`/`Role` restaurados por pedido del usuario (contrato backend, fase 2).
-- Verificación: `pnpm ng build` OK (2026-11-03). Sin tests (vitest no configurado). Funcional no probado.
+- `AuthStoreService` (`core/services/auth-store-service.ts`): estado mínimo — `setSession(token)`, `clearSession()`, `readStoredToken()` público (para el futuro interceptor). Sin signals (nada reactivo aún). Migración completa y verificada: la página inyecta el core; el servicio viejo de la feature fue eliminado; `pnpm ng build` OK (2026-11-03).
+- Nota: el borrado de la clave legacy `user` quedó fuera de `clearSession` (decisión del usuario: el flujo actual ya no la escribe). Login funciona extremo a extremo (verificado por el usuario).
 
 ## Archivos tocados
 
@@ -24,7 +22,7 @@ AUTH frontend (Google) — arquitectura corregida. El login falla; el usuario de
 
 ## Bloqueos
 
-- Login sigue fallando en la prueba del usuario; con `describeError` verá la causa real (¿401 aud=GOOGLE_CLIENT_ID? ¿500 backend? ¿CORS?). El backend `routes.py` usa `CredentialsException` sin importarla (500 si llega token vacío).
+- Login falló en prueba real: backend devolvía 500 (`AuthService` roto por indentación) sin cabeceras CORS → `status 0` en el navegador. Backend arreglado y verificado por import: `service.py` (indentación + datetime) y `routes.py` (import CredentialsException, imports duplicados). `describeError()` ya muestra el detalle real.
 - `home-page.ts` logout no limpia el JWT (fuera de auth). Pendiente.
 
 ## Siguiente paso

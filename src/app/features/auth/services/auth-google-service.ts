@@ -12,7 +12,7 @@ const getGoogle = (): { accounts?: GoogleAccounts } | undefined => {
 
 @Service()
 export class AuthGoogleService {
-    // ✅ Señal interna opcional para saber si el script está listo
+  // ✅ Señal interna opcional para saber si el script está listo
   private scriptReady = signal(false);
   private readonly logger = inject(LoggerService);
 

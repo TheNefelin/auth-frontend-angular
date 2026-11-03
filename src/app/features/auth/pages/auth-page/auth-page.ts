@@ -6,7 +6,6 @@ import { AuthGoogleComponent } from "@features/auth/components/auth-google-compo
 import { AuthGithubComponent } from "@features/auth/components/auth-github-component/auth-github-component";
 import { AuthAppleComponent } from "@features/auth/components/auth-apple-component/auth-apple-component";
 import { AuthLoginComponent } from "@features/auth/components/auth-login-component/auth-login-component";
-import { AuthStore } from "@features/auth/services/auth-store";
 import { AuthGoogleService } from "@features/auth/services/auth-google-service";
 import { AuthService } from "@features/auth/services/auth-service";
 import { ApiAuthGoogleRequest } from "@features/auth/models/models";
@@ -14,6 +13,7 @@ import { ROUTES_CONSTANTS } from "@shared/constants/routes-constant";
 import { ToastService } from "@core/services/toast-service";
 import { ErrorService } from "@core/services/error-service";
 import { LoggerService } from "@core/services/logger-service";
+import { AuthStoreService } from "@core/services/auth-store-service";
 
 @Component({
   imports: [AuthGoogleComponent, AuthGithubComponent, AuthAppleComponent, AuthLoginComponent],
@@ -23,7 +23,7 @@ import { LoggerService } from "@core/services/logger-service";
 export class AuthPage {
   private readonly authGoogleService = inject(AuthGoogleService);
   private readonly authService = inject(AuthService);
-  private readonly store = inject(AuthStore);
+  private readonly store = inject(AuthStoreService);
   private readonly router = inject(Router);
   private readonly toastService = inject(ToastService);
   private readonly errorService = inject(ErrorService);
