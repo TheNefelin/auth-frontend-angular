@@ -4,7 +4,7 @@ import { inject, Service } from "@angular/core";
 @Service()
 export class ApiService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://127.0.0.1:8000/';
+  private readonly baseUrl = 'http://127.0.0.1:8000';
 
   getAll<TResponse>(endpoint: string) {
     return this.http.get<TResponse>(`${this.baseUrl}/${endpoint}`);
