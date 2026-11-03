@@ -5,28 +5,28 @@
 
 ## Tarea activo
 
-AUTH frontend (Google) — optimización y limpieza. Hecho: conexión real página→store, DTO real, muertos eliminados.
+AUTH frontend (Google) — arquitectura corregida. El login falla; el usuario depura con error real visible ahora.
 
 ## Último avance comprobado
 
-- `AuthStore` (`auth-store.ts`, renombrado desde `auth-store.ts.ts`) cableado a la página; DTO `ApiAuthGoogleResponse` = `{ access_token, token_type, expires_in }`; `AuthUser`/`Role`/`currentUser` eliminados; JWT en localStorage; navegación única a HOME.
-- `waitForScript()` con timeout de 10s; rechazos como `Error`.
-- Muerto eliminado: `#googleBtn`, `ROUTES_CONSTANTS.AUTH`, doble `<use>` Apple, typos "wiith".
-- Verificación: `pnpm ng build` OK (2026-11-03). `pnpm lint` no existe en package.json.
+- Arquitectura: la página orquesta (Google→API→store→navegar); `AuthStore` = estado puro (`token` + `isAuthenticated`, `setSession()`, `clear()`), sin Router/HTTP. `describeError()` traduce `HttpErrorResponse` (incluye `detail` de FastAPI) a toast legible; `LoggerService` (dev-only) loguea el error crudo.
+- Commit f8e5e06 hecho por el usuario; luego se agregó `provideHttpClient()` en `app.config.ts` y `baseUrl` sin doble slash (arreglado tras error de login).
+- Modelos `AuthUser`/`Role` restaurados por pedido del usuario (contrato backend, fase 2).
+- Verificación: `pnpm ng build` OK (2026-11-03). Sin tests (vitest no configurado). Funcional no probado.
 
 ## Archivos tocados
 
-- `features/auth/services/auth-store.ts` (nuevo), `auth-store.ts.ts` (eliminado), `auth-google-service.ts`, `models/models.ts`, `pages/auth-page/*`, componentes apple/github, `shared/constants/routes-constant.ts`, DEVELOPMENT.md
+- `features/auth/services/auth-store.ts`, `pages/auth-page/*`, `models/models.ts`, `app.config.ts`, `core/services/api-service.ts`, DEVELOPMENT.md
 
 ## Pruebas ejecutadas y resultado real
 
-- `pnpm ng build` → bundle completo, 2 prerendered routes. Sin tests (vitest no configurado).
+- `pnpm ng build` → bundle completo OK. Sin prueba funcional del login (backend debe correr en 127.0.0.1:8000).
 
 ## Bloqueos
 
-- `ApiService.baseUrl` hardcodeado con doble slash (`http://127.0.0.1:8000//auth/google`) → probable 404 en el POST real. Fuera del alcance auth; pendiente autorización de una línea en `core/services/api-service.ts`.
-- `home-page.ts` logout no limpia `jwt_token` (fuera de auth). Pendiente.
+- Login sigue fallando en la prueba del usuario; con `describeError` verá la causa real (¿401 aud=GOOGLE_CLIENT_ID? ¿500 backend? ¿CORS?). El backend `routes.py` usa `CredentialsException` sin importarla (500 si llega token vacío).
+- `home-page.ts` logout no limpia el JWT (fuera de auth). Pendiente.
 
 ## Siguiente paso
 
-- Decisión del usuario: fix `ApiService` (core) y/o logout en home; fase 2: backend (`/auth/me`, `user`/role en respuesta).
+- Que el usuario re-pruebe el flujo y comparta el mensaje del toast / detalle de Network para diagnosticar la causa real.

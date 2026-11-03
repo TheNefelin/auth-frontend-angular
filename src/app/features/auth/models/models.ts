@@ -29,3 +29,18 @@ export interface ApiAuthGoogleResponse {
   token_type: string;
   expires_in: number;
 }
+
+// Modelos del contrato de usuario del backend (se usarán al integrar /auth/me).
+export interface AuthUser {
+  id_user: string;
+  email: string;
+  name?: string;
+  picture?: string;
+  profileComplete: boolean;
+  role: Role;
+}
+
+export enum Role {
+  Admin = 'Admin',
+  Reader = 'Lector',
+}

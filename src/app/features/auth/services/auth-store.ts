@@ -1,52 +1,28 @@
-import { Router } from '@angular/router';
-import { computed, inject, Service, signal } from '@angular/core';
-import { ErrorService } from '@core/services/error-service';
-import { ROUTES_CONSTANTS } from '@shared/constants/routes-constant';
-import { ApiAuthGoogleRequest, ApiAuthGoogleResponse } from '@features/auth/models/models';
-import { AuthGoogleService } from '@features/auth/services/auth-google-service';
-import { AuthService } from '@features/auth/services/auth-service';
-import { firstValueFrom } from 'rxjs';
-import { ToastService } from '@core/services/toast-service';
+import { computed, Service, signal } from '@angular/core';
+
+const TOKEN_KEY = 'jwt_token';
 
 @Service()
 export class AuthStore {
-  private readonly router = inject(Router);
-  private readonly googleAuth = inject(AuthGoogleService);
-  private readonly apiAuth = inject(AuthService);
-  private readonly errorService = inject(ErrorService);
-  private readonly toastService = inject(ToastService);
+  private readonly tokenSignal = signal<string | null>(this.readStoredToken());
 
-  private readonly isLoading = signal(false);
-  readonly loading = computed(() => this.isLoading());
+  readonly token = this.tokenSignal.asReadonly();
+  readonly isAuthenticated = computed(() => !!this.tokenSignal());
 
-  async login(): Promise<void> {
-    this.isLoading.set(true);
-
-    try {
-      const googleToken = await this.googleAuth.getAccessToken();
-
-      const request: ApiAuthGoogleRequest = { googleToken };
-      const response: ApiAuthGoogleResponse = await firstValueFrom(this.apiAuth.auth(request));
-
-      localStorage.setItem('jwt_token', response.access_token);
-
-      this.toastService.show('Inicio de sesión exitoso', 'success');
-      await this.router.navigate([ROUTES_CONSTANTS.HOME]);
-    } catch (error: unknown) {
-      const message = (typeof error === 'string' && error)
-        || (error instanceof Error && error.message)
-        || 'Error al iniciar sesión. Intenta nuevamente.';
-
-      this.errorService.show(message);
-    } finally {
-      this.isLoading.set(false);
-    }
+  setSession(token: string): void {
+    localStorage.setItem(TOKEN_KEY, token);
+    this.tokenSignal.set(token);
   }
 
-  logout(): void {
-    localStorage.removeItem('jwt_token');
+  clear(): void {
+    localStorage.removeItem(TOKEN_KEY);
     // Limpia la clave legacy de builds anteriores que guardaban el usuario.
     localStorage.removeItem('user');
-    this.router.navigate([ROUTES_CONSTANTS.HOME]);
+    this.tokenSignal.set(null);
+  }
+
+  private readStoredToken(): string | null {
+    if (typeof localStorage === 'undefined') return null;
+    return localStorage.getItem(TOKEN_KEY);
   }
 }
