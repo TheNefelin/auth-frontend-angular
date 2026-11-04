@@ -13,9 +13,13 @@ export class UserDetailsComponent {
   readonly profile = input.required<UserProfile>();
   readonly logout = output<void>();
 
-  protected readonly displayName = computed(
-    () => this.profile().name ?? this.profile().email ?? 'Usuario',
-  );
+  protected readonly displayName = computed(() => {
+    const fullName = [this.profile().name, this.profile().lastname]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+    return fullName || this.profile().email || 'Usuario';
+  });
   protected readonly initial = computed(
     () => this.displayName().trim().charAt(0).toUpperCase() || '?',
   );

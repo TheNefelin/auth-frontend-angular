@@ -36,7 +36,7 @@ describe('UserDetailsComponent', () => {
 
   it('should display the profile name and email', () => {
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain('Demo User');
+    expect(text).toContain('Demo User Demo');
     expect(text).toContain('user@example.com');
   });
 });

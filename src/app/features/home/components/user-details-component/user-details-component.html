@@ -16,13 +16,14 @@
   <ul class="menu dropdown-content bg-base-300 rounded-box z-10 mt-3 w-52 p-2 shadow-xl">
     <li class="menu-title text-sm font-bold">Hola, {{ displayName() }}</li>
     <li><span class="text-sm">{{ profile().email ?? '—' }}</span></li>
-    <li><span class="text-sm">Proveedor: {{ profile().provider ?? '—' }}</span></li>
-    <li aria-hidden="true" class="pointer-events-none"><hr class="hr my-2" /></li>
+    <li><span class="text-sm">rol: {{ profile().role ?? 'Sin Roll' }} - auth: {{ profile().provider ?? 'Sin Proveedor' }}</span></li>
+
+    <li class="menu-title"><hr/></li>
 
     <li><a class="text-sm" routerLink="/">⚙️ Inicio</a></li>
     <li><a class="text-sm" routerLink="/">⚙️ Panel</a></li>
 
-    <li aria-hidden="true" class="pointer-events-none"><hr class="hr my-2" /></li>
+    <li class="menu-title"><hr/></li>
 
     <li>
       <button
