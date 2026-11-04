@@ -1,4 +1,11 @@
 <section class="min-h-screen flex flex-col items-center justify-center gap-4">
   <h1 class="text-2xl font-bold">WELCOME</h1>
-  <button class="btn btn-primary" (click)="logout()">Logout</button>
+
+  @if (profile.isLoading()) {
+    <p class="text-base-content/70">Cargando tu perfil…</p>
+  } @else if (profile.error()) {
+    <p class="text-error">No se pudo cargar tu perfil.</p>
+  } @else {
+    <app-user-details-component [profile]="profile.value()!" (logout)="logout()" />
+  }
 </section>

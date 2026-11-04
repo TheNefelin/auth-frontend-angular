@@ -1,0 +1,39 @@
+<div class="dropdown dropdown-end">
+  <div class="indicator">
+    <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
+      <div class="w-10 rounded-full ring-2 ring-offset-2 ring-offset-base-100 ring-primary">
+        <img
+          [ngSrc]="pictureUrl()"
+          [alt]="displayName()"
+          width="40"
+          height="40"
+          class="rounded-full" />
+      </div>
+    </div>
+  </div>
+
+  <ul class="menu dropdown-content bg-base-300 rounded-box z-10 mt-3 w-52 p-2 shadow-xl">
+    <li class="menu-title text-sm font-bold">Hola, {{ displayName() }}</li>
+    <li><span class="text-sm">{{ profile().email ?? '—' }}</span></li>
+    <li><span class="text-sm">Proveedor: {{ profile().provider ?? '—' }}</span></li>
+    <li aria-hidden="true" class="pointer-events-none"><hr class="hr my-2" /></li>
+
+    <li><a class="text-sm" routerLink="/">⚙️ Inicio</a></li>
+    <li><a class="text-sm" routerLink="/">⚙️ Panel</a></li>
+
+    <li aria-hidden="true" class="pointer-events-none"><hr class="hr my-2" /></li>
+
+    <li>
+      <button
+        class="btn btn-secondary text-sm font-medium flex items-center gap-2"
+        (click)="logout.emit()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+          <path d="M0 0h24v24H0z" fill="none" />
+          <path fill="currentColor" d="M11.25 19a.75.75 0 0 1 .75-.75h6a.25.25 0 0 0 .25-.25V6a.25.25 0 0 0-.25-.25h-6a.75.75 0 0 1 0-1.5h6c.966 0 1.75.784 1.75 1.75v12A1.75 1.75 0 0 1 18 19.75h-6a.75.75 0 0 1-.75-.75" />
+          <path fill="currentColor" d="M15.612 13.115a1 1 0 0 1-1 1H9.756q-.035.533-.086 1.066l-.03.305a.718.718 0 0 1-1.025.578a16.8 16.8 0 0 1-4.885-3.539l-.03-.031a.72.72 0 0 1 0-.998l.03-.031a16.8 16.8 0 0 1 4.885-3.539a.718.718 0 0 1 1.025.578l.03.305q.051.532.086 1.066h4.856a1 1 0 0 1 1 1z" />
+        </svg>
+        Cerrar Sesión
+      </button>
+    </li>
+  </ul>
+</div>
