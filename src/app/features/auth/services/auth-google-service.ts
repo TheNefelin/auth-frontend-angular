@@ -1,7 +1,10 @@
-import { inject, Service, signal } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { LoggerService } from '@core/services/logger-service';
 import { environment } from '@environments/environment';
 import { GoogleAccounts } from '@features/auth/models/models';
+
+const GIS_SCRIPT_URL = 'https://accounts.google.com/gsi/client';
+const GIS_LOAD_TIMEOUT_MS = 10000;
 
 const isBrowser = () => typeof window !== 'undefined' && typeof document !== 'undefined';
 
@@ -12,52 +15,12 @@ const getGoogle = (): { accounts?: GoogleAccounts } | undefined => {
 
 @Service()
 export class AuthGoogleService {
-  // ✅ Señal interna opcional para saber si el script está listo
-  private scriptReady = signal(false);
   private readonly logger = inject(LoggerService);
+  private scriptPromise: Promise<void> | null = null;
 
-  constructor() {
-    // 🔹 Espera a que window.google esté disponible (solo en navegador)
-    if (isBrowser()) {
-      this.checkGoogleScript();
-    }
-  }
-
-  // 🔹 Espera a que window.google esté disponible
-  private checkGoogleScript(): void {
-    const google = getGoogle();
-
-    if (google?.accounts?.oauth2) {
-      this.scriptReady.set(true);
-      return;
-    }
-
-    // Poll cada 100ms hasta 10 segundos
-    let attempts = 0;
-    const interval = setInterval(() => {
-      attempts++;
-      const google = getGoogle();
-      if (google?.accounts?.oauth2) {
-        clearInterval(interval);
-        this.scriptReady.set(true);
-      } else if (attempts >= 100) {
-        clearInterval(interval);
-        this.logger.error(
-          'AuthGoogleService',
-          'Google Identity Services no se cargó después de 10 segundos. Revisa que el script esté en index.html'
-        );
-      }
-    }, 100);
-  }
-
-   // 🔹 Método público para obtener access_token via popup
-   async getAccessToken(): Promise<string> {
-    if (!isBrowser()) {
-      throw new Error('Google OAuth2 solo está disponible en el navegador');
-    }
-
-    // ✅ Esperar hasta que el script esté listo
-    await this.waitForScript();
+  // 🔹 Obtiene un access_token vía popup, cargando GIS bajo demanda si hace falta
+  async getAccessToken(): Promise<string> {
+    await this.ensureGisLoaded();
 
     return new Promise((resolve, reject) => {
       const oauth2 = getGoogle()?.accounts?.oauth2;
@@ -86,20 +49,62 @@ export class AuthGoogleService {
     });
   }
 
-  // 🔹 Espera interna hasta que scriptReady sea true (timeout de 10s)
-  private waitForScript(): Promise<void> {
+  // 🔹 Carga GIS una sola vez (idempotente) y rechaza ante error/timeout
+  private ensureGisLoaded(): Promise<void> {
+    if (!isBrowser()) {
+      return Promise.reject(new Error('Google OAuth2 solo está disponible en el navegador'));
+    }
+
+    this.scriptPromise ??= this.withTimeout(this.loadGisScript(), GIS_LOAD_TIMEOUT_MS)
+      .catch((error: unknown) => {
+        // Permite reintento en la próxima llamada tras un fallo transitorio
+        this.scriptPromise = null;
+        this.logger.error('AuthGoogleService', 'No se pudo cargar Google Identity Services', error);
+        throw error;
+      });
+
+    return this.scriptPromise;
+  }
+
+  private loadGisScript(): Promise<void> {
+    // Si ya está cargado (por una ejecución anterior), resuelve al instante
+    if (getGoogle()?.accounts?.oauth2) {
+      return Promise.resolve();
+    }
+
     return new Promise((resolve, reject) => {
-      const started = Date.now();
-      const check = () => {
-        if (this.scriptReady()) {
+      const script = document.createElement('script');
+      script.src = GIS_SCRIPT_URL;
+      script.async = true;
+      script.defer = true;
+
+      script.onload = () => {
+        if (getGoogle()?.accounts?.oauth2) {
           resolve();
-        } else if (Date.now() - started >= 10_000) {
-          reject(new Error('Google Identity Services no se cargó después de 10 segundos. Revisa que el script esté en index.html'));
         } else {
-          setTimeout(check, 100);
+          script.remove();
+          reject(new Error('GIS se cargó pero no inicializó window.google'));
         }
       };
-      check();
+      script.onerror = () => {
+        script.remove();
+        reject(new Error('No se pudo cargar Google Identity Services (red o CSP)'));
+      };
+
+      document.head.appendChild(script);
+    });
+  }
+
+  private withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const timer = setTimeout(
+        () => reject(new Error('Google Identity Services no se cargó después de 10 segundos. Revisa red/CSP')),
+        ms,
+      );
+      promise.then(
+        (value) => { clearTimeout(timer); resolve(value); },
+        (error) => { clearTimeout(timer); reject(error); },
+      );
     });
   }
 }
