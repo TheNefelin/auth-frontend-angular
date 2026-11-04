@@ -1,4 +1,5 @@
-import { inject, Service } from '@angular/core';
+import { PLATFORM_ID, inject, Service } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { LoggerService } from '@core/services/logger-service';
 import { environment } from '@environments/environment';
 import { GoogleAccounts } from '@features/auth/models/models';
@@ -6,16 +7,11 @@ import { GoogleAccounts } from '@features/auth/models/models';
 const GIS_SCRIPT_URL = 'https://accounts.google.com/gsi/client';
 const GIS_LOAD_TIMEOUT_MS = 10000;
 
-const isBrowser = () => typeof window !== 'undefined' && typeof document !== 'undefined';
-
-const getGoogle = (): { accounts?: GoogleAccounts } | undefined => {
-  if (!isBrowser()) return undefined;
-  return (window as unknown as { google?: { accounts?: GoogleAccounts } }).google;
-};
-
 @Service()
 export class AuthGoogleService {
-  private readonly logger = inject(LoggerService);
+  private readonly loggerService = inject(LoggerService);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
   private scriptPromise: Promise<void> | null = null;
 
   // 🔹 Obtiene un access_token vía popup, cargando GIS bajo demanda si hace falta
@@ -23,7 +19,7 @@ export class AuthGoogleService {
     await this.ensureGisLoaded();
 
     return new Promise((resolve, reject) => {
-      const oauth2 = getGoogle()?.accounts?.oauth2;
+      const oauth2 = this.readGoogle()?.accounts?.oauth2;
       if (!oauth2?.initTokenClient) {
         reject(new Error('Google OAuth2 no disponible'));
         return;
@@ -51,7 +47,7 @@ export class AuthGoogleService {
 
   // 🔹 Carga GIS una sola vez (idempotente) y rechaza ante error/timeout
   private ensureGisLoaded(): Promise<void> {
-    if (!isBrowser()) {
+    if (!this.isBrowser) {
       return Promise.reject(new Error('Google OAuth2 solo está disponible en el navegador'));
     }
 
@@ -59,7 +55,7 @@ export class AuthGoogleService {
       .catch((error: unknown) => {
         // Permite reintento en la próxima llamada tras un fallo transitorio
         this.scriptPromise = null;
-        this.logger.error('AuthGoogleService', 'No se pudo cargar Google Identity Services', error);
+        this.loggerService.error('AuthGoogleService', 'No se pudo cargar Google Identity Services', error);
         throw error;
       });
 
@@ -68,7 +64,7 @@ export class AuthGoogleService {
 
   private loadGisScript(): Promise<void> {
     // Si ya está cargado (por una ejecución anterior), resuelve al instante
-    if (getGoogle()?.accounts?.oauth2) {
+    if (this.readGoogle()?.accounts?.oauth2) {
       return Promise.resolve();
     }
 
@@ -79,7 +75,7 @@ export class AuthGoogleService {
       script.defer = true;
 
       script.onload = () => {
-        if (getGoogle()?.accounts?.oauth2) {
+        if (this.readGoogle()?.accounts?.oauth2) {
           resolve();
         } else {
           script.remove();
@@ -93,6 +89,11 @@ export class AuthGoogleService {
 
       document.head.appendChild(script);
     });
+  }
+
+  private readGoogle(): { accounts?: GoogleAccounts } | undefined {
+    if (!this.isBrowser) return undefined;
+    return (window as unknown as { google?: { accounts?: GoogleAccounts } }).google;
   }
 
   private withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
