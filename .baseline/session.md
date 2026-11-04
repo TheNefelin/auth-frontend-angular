@@ -10,6 +10,8 @@ AUTH frontend (Google) — login funcionando extremo a extremo (verificado por e
 ## Último avance comprobado
 
 - `AuthStoreService` (`core/services/auth-store-service.ts`): `setSession/clearSession/readStoredToken()` público. Migración completa y verificada (página usa el core, servicio viejo borrado, `ng build` OK).
+- Interceptor `core/interceptors/error-interceptor.ts` implementado y **registrado** en `app.config.ts` (`withInterceptors([errorInterceptor])`): toast único para errores HTTP (parseo FastAPI detail string y array 422; mensaje humano para status 0; `LoggerService` para detalle dev). `auth-page.ts`: `describeError` solo para errores NO HTTP; sin doble toast.
+- Verificación: `pnpm ng build` OK (2026-11-04) tras los cambios del interceptor. Sin prueba funcional de toast (requiere backend/navegador).
 - Lint/spec: `pnpm lint` no existe en package.json.
 - Login funciona e2e (usuario). Bug pendiente mañana: desactivar globalmente TODOS los botones al hacer click en cualquiera (solución propuesta: 1 interruptor `disabled()` compartido + `loginGoogle` que también lo levanta/baja).
 - Pendientes: `auth-store-service.ts` sin `USER_KEY` legacy (decisión del usuario), `readStoredToken` público ocioso hasta el interceptor, Tier 1 (interceptor Bearer, authGuard, logout de home), home-page no limpia JWT.

@@ -50,7 +50,10 @@ export class AuthPage {
       await this.router.navigate([ROUTES_CONSTANTS.HOME]);
     } catch (error: unknown) {
       this.logger.error('AuthPage', 'loginGoogle', error);
-      this.errorService.show(this.describeError(error));
+      // HTTP: el errorInterceptor ya mostró el toast; no duplicarlo aquí.
+      if (!(error instanceof HttpErrorResponse)) {
+        this.errorService.show(this.describeError(error));
+      }
     } finally {
       this.loadingGoogle.set(false);
       this.disabled.set(false);
@@ -73,15 +76,7 @@ export class AuthPage {
   }
 
   private describeError(error: unknown): string {
-    if (error instanceof HttpErrorResponse) {
-      if (error.status === 0) {
-        return 'No se pudo conectar con el servidor. Verifica que el backend esté en ejecución.';
-      }
-      const detail = (error.error as { detail?: unknown } | null | undefined)?.detail;
-      const reason = typeof detail === 'string' ? detail : error.message;
-      return `Error ${error.status}: ${reason}`;
-    }
-
+    // Solo se llega aquí para errores NO HTTP (p. ej. popup/GIS de Google).
     if (error instanceof Error && error.message) {
       return error.message;
     }
