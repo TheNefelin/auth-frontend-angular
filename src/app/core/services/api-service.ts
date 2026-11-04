@@ -18,6 +18,10 @@ export class ApiService {
     return this.http.post<TResponse>(`${this.baseUrl}/${endpoint}`, body);
   }
 
+  post<TResponse>(endpoint: string) {
+    return this.http.post<TResponse>(`${this.baseUrl}/${endpoint}`, {});
+  }
+
   update<TResponse, TBody>(endpoint: string, id: number, body: TBody) {
     return this.http.put<TResponse>(`${this.baseUrl}/${endpoint}/${id}`, body);
   }

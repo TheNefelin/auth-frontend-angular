@@ -13,4 +13,8 @@ export class AuthService {
       this.endpoint, item
     );
   }
+
+  logout(): Observable<{ status: string }> {
+    return this.apiService.post<{ status: string }>('auth/logout');
+  }
 }

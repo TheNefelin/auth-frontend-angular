@@ -11,6 +11,7 @@ import { ROUTES_CONSTANTS } from '@shared/constants/routes-constant';
 
 const API_ORIGIN = 'http://127.0.0.1:8000';
 const REFRESH_URL = `${API_ORIGIN}/auth/refresh`;
+const LOGOUT_URL = `${API_ORIGIN}/auth/logout`;
 
 interface RefreshResponse {
   access_token: string;
@@ -33,8 +34,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: unknown) => {
       const isUnauthorized = error instanceof HttpErrorResponse && error.status === 401;
 
-      // Nunca reintentar sobre el propio refresh ni sobre peticiones externas.
-      if (!isUnauthorized || !isApiRequest || req.url === REFRESH_URL) {
+      // Nunca reintentar sobre refresh/logout ni sobre peticiones externas:
+      // renovar no tiene sentido para cerrar sesión.
+      const isAuthLifecycle = req.url === REFRESH_URL || req.url === LOGOUT_URL;
+      if (!isUnauthorized || !isApiRequest || isAuthLifecycle) {
         return throwError(() => error);
       }
 
