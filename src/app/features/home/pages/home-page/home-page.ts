@@ -13,20 +13,15 @@ import type { UserProfile } from "@core/models/user-profile";
 })
 export class HomePage {
   private readonly router = inject(Router);
-  private readonly store = inject(AuthStoreService);
+  private readonly authStoreService = inject(AuthStoreService);
 
   protected readonly profile = httpResource<UserProfile>(() => {
-    const token = this.store.readStoredToken();
-    if (!token) return undefined;
-    return {
-      url: 'http://127.0.0.1:8000/auth/me',
-      method: 'GET' as const,
-      headers: { Authorization: `Bearer ${token}` },
-    };
+    if (!this.authStoreService.readStoredToken()) return undefined;
+    return { url: 'http://127.0.0.1:8000/auth/me', method: 'GET' as const };
   });
 
   protected logout(): void {
-    this.store.clearSession();
+    this.authStoreService.clearSession();
     this.router.navigate([ROUTES_CONSTANTS.AUTH]);
   }
 }

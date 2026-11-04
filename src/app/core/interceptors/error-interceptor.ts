@@ -6,12 +6,12 @@ import { catchError, throwError } from "rxjs";
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const errorService = inject(ErrorService);
-  const logger = inject(LoggerService);
+  const loggerService = inject(LoggerService);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
       // Detalle técnico solo en desarrollo; al usuario, mensaje humano.
-      logger.error('HttpInterceptor', `${req.method} ${req.url} -> ${error.status}`, error);
+      loggerService.error('HttpInterceptor', `${req.method} ${req.url} -> ${error.status}`, error);
 
       const message = buildUserMessage(error);
       errorService.show(message);

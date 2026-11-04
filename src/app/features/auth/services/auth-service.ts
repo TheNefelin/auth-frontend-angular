@@ -5,7 +5,7 @@ import { ApiAuthGoogleRequest, ApiAuthGoogleResponse } from '@features/auth/mode
 
 @Service()
 export class AuthService {
-  private apiService = inject(ApiService)
+  private readonly apiService = inject(ApiService);
   private readonly endpoint = 'auth/google';
 
   auth(item: ApiAuthGoogleRequest): Observable<ApiAuthGoogleResponse> {

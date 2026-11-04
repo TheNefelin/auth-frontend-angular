@@ -23,11 +23,11 @@ import { AuthStoreService } from "@core/services/auth-store-service";
 export class AuthPage {
   private readonly authGoogleService = inject(AuthGoogleService);
   private readonly authService = inject(AuthService);
-  private readonly store = inject(AuthStoreService);
+  private readonly authStoreService = inject(AuthStoreService);
   private readonly router = inject(Router);
   private readonly toastService = inject(ToastService);
   private readonly errorService = inject(ErrorService);
-  private readonly logger = inject(LoggerService);
+  private readonly loggerService = inject(LoggerService);
 
   protected readonly loadingAuth = signal<boolean>(false);
   protected readonly loadingApple = signal<boolean>(false);
@@ -44,12 +44,12 @@ export class AuthPage {
       const request: ApiAuthGoogleRequest = { googleToken };
       const response = await firstValueFrom(this.authService.auth(request));
 
-      this.store.setSession(response.access_token);
+      this.authStoreService.setSession(response.access_token, response.refresh_token);
 
       this.toastService.show('Inicio de sesión exitoso', 'success');
       await this.router.navigate([ROUTES_CONSTANTS.HOME]);
     } catch (error: unknown) {
-      this.logger.error('AuthPage', 'loginGoogle', error);
+      this.loggerService.error('AuthPage', 'loginGoogle', error);
       // HTTP: el errorInterceptor ya mostró el toast; no duplicarlo aquí.
       if (!(error instanceof HttpErrorResponse)) {
         this.errorService.show(this.describeError(error));
