@@ -8,6 +8,10 @@ export const routes: Routes = [
   {
     path: 'home',
     loadChildren: () => import('@features/home/home.routes').then(m => m.ROUTES),
-  }
+  },
+  {
+    path: '**',
+    loadChildren: () => import('@features/not-found/not-found.routes').then(m => m.ROUTES),
+  },
 ];
 

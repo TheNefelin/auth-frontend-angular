@@ -1,0 +1,12 @@
+<div class="min-h-screen flex flex-col items-center justify-center px-4">
+  <h1 class="text-9xl font-extrabold text-error">404</h1>
+
+  <div class="mt-5 text-center bg-base-300 shadow-xl p-4 rounded w-full max-w-2xl">
+    <p class="text-2xl font-semibold md:text-3xl">Página no encontrada</p>
+    <p class="mt-2 text-error">La página que buscas no existe o ha sido movida</p>
+    
+    <div class="mt-10 flex gap-4 justify-center">
+      <app-button-component [icon]="'goto'" [textBtn]="'Volver'" (clicked)="navigateBack()"/>  
+    </div>
+  </div>
+</div>
