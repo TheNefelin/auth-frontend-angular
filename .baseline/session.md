@@ -5,24 +5,21 @@
 
 ## Tarea activa
 
-Refresh token (rotación + idle) en el frontend. Implementado; falta prueba funcional.
+Auth Google e2e cerrado (login → sesión → perfil → renovación → expiración → logout). Suite de tests en verde.
 
 ## Último avance comprobado
 
-- `AuthStoreService`: guarda access+refresh (`setSession(access, refresh)`, `clearSession`, `readRefreshToken`, `updateAccessToken`, `hasSession`). Signals internos.
-- `auth-interceptor.ts` (nuevo, registrado ANTES de `errorInterceptor`): añade `Authorization: Bearer` a la API propia; ante **401** llama `/auth/refresh`, reintenta la request original; si el refresh falla → `clearSession()` + navega a `/` (logout automático).
-- `home-page`: delega el Bearer al interceptor (conserva guarda de presencia para no disparar 401 sin sesión).
-- `models.ts`: `ApiAuthGoogleResponse.refresh_token`; `auth-page` pasa refresh al `setSession`.
-- Login + `/auth/me` + user-details (provider/name/apellido/avatar con `referrerpolicy`) funcionando e2e (usuario). Backend refresh ya commiteado.
-- `pnpm ng build` OK (2026-11-04). `pnpm lint` no existe.
-
-## Archivos tocados (esta ronda)
-
-- `core/services/auth-store-service.ts`, `core/interceptors/auth-interceptor.ts` (nuevo), `app.config.ts`, `features/auth/pages/auth-page/auth-page.ts`, `features/auth/models/models.ts`, `features/home/pages/home-page/home-page.ts`
+- **Google Auth e2e completo y probado por el usuario**: login, `/auth/me`, user-details (nombre/apellido/rol/provider/avatar), renovación silenciosa (401→refresh→retry), idle 30 min / absoluto 1 día (expulsa), guard en `/home`, logout server-side, not-found 404.
+- **Fix del toast falso de 401**: `app.config` ordena `[errorInterceptor, authInterceptor]` (el auth va por dentro) y `error-interceptor` no muestra toast en 401.
+- `AuthStoreService` guarda access+refresh (signals). `auth-interceptor` añade Bearer, refresca en 401, reintenta; si falla → logout+redirect.
+- `/home` en `RenderMode.Client` (SSR no ve localStorage).
+- Tests: **18/18** (`ng test`). `ng build` OK. `pnpm lint` no existe.
 
 ## Pendientes
 
-- Prueba funcional del refresh en navegador (expirar access token / forzar 401).
-- `authGuard` en `/home` (hoy abierta; el 401→logout mitiga pero no bloquea la ruta).
-- `.env.demo` DEBUG/API_KEY sin consumidor; `ValidationException.super__` typo (backend); `verify_api_key_header` (2º round); tests (0 en ambos).
-- Logout: el `clearSession()` local ya limpia ambos tokens; falta llamar `POST /auth/logout` (revoca sesiones server-side).
+- `forbidden`/guard de rol: DESCARTADO (sin disparador real; nace con una pantalla que requiera roles).
+- Detección de reuso del refresh (endurecimiento).
+- GitHub / Apple / login clásico (replicar patrón Google).
+- Tests de integración con backend; `pnpm lint`.
+- Evaluar cookie `HttpOnly` (BFF) frente a localStorage (riesgo XSS).
+- `docs/auth-flow.md` §9 tiene el roadmap completo.

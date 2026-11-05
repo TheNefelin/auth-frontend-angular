@@ -75,7 +75,7 @@ frontend-python/
 
 ## 5. Pendientes
 
-- [ ] `forbidden` + guard de rol (el rol aún no autoriza rutas).
+- [ ] Detección de reuso del refresh (revocar la familia de sesiones).
 - [ ] Replicar el flujo en GitHub / Apple / login clásico.
 - [ ] Tests de integración con backend (hoy solo unitarios).
 - [ ] MFA/2FA en frontend (código TOTP).
