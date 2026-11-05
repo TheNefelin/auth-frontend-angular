@@ -1,7 +1,7 @@
 import { Component, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthRegister } from '@features/auth/models/models';
+import { RegisterForm } from '@features/auth/models/models';
 import { LoadingComponent } from '@shared/components/loading-component/loading-component';
 import { MessageErrorComponent } from '@shared/components/message-error-component/message-error-component';
 import { ROUTES_CONSTANTS } from '@shared/constants/routes-constant';
@@ -18,13 +18,13 @@ export class AuthRegisterComponent {
   //-- INPUTS & OUTPUTS -------------------------
   readonly isLoading = input<boolean>(false);
   readonly disabled = input<boolean>(false);
-  protected readonly submitted = output<AuthRegister>();
+  protected readonly submitted = output<RegisterForm>();
 
   //-- SIGNALS ----------------------------------
   protected readonly errorMessage = signal<string | null>(null);
 
   // Form de creación: sin fuente externa, por eso `signal` y no `linkedSignal`.
-  protected readonly formData = signal<AuthRegister>({
+  protected readonly formData = signal<RegisterForm>({
     email: '',
     password: '',
     confirmPassword: '',
@@ -59,7 +59,7 @@ export class AuthRegisterComponent {
     this.submitted.emit(data);
   }
 
-  private validate(d: AuthRegister): string | null {
+  private validate(d: RegisterForm): string | null {
     if (!d.email) return 'El email es obligatorio';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) return 'Formato de email inválido';
     if (!d.password) return 'La contraseña es obligatoria';

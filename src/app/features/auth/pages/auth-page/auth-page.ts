@@ -42,7 +42,7 @@ export class AuthPage {
     try {
       const googleToken = await this.authGoogleService.getAccessToken();
       const request: ApiAuthGoogleRequest = { googleToken };
-      const response = await firstValueFrom(this.authService.auth(request));
+      const response = await firstValueFrom(this.authService.loginGoogle(request));
 
       this.authStoreService.setSession(response.access_token, response.refresh_token);
 
