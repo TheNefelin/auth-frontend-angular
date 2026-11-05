@@ -76,5 +76,5 @@ function refreshSession(
 
 function logout(authStoreService: AuthStoreService, router: Router): void {
   authStoreService.clearSession();
-  void router.navigate([ROUTES_CONSTANTS.AUTH]);
+  void router.navigate([ROUTES_CONSTANTS.AUTH.LOGIN]);
 }

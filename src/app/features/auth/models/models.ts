@@ -45,3 +45,12 @@ export enum Role {
   Admin = 'Admin',
   Reader = 'Lector',
 }
+
+export interface AuthLogin {
+  email: string;
+  password: string;
+}
+
+export interface AuthRegister extends AuthLogin {
+  confirmPassword: string;
+}

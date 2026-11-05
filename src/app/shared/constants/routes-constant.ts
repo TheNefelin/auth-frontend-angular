@@ -1,4 +1,7 @@
 export const ROUTES_CONSTANTS = {
-  AUTH: '/',
+  AUTH: {
+    LOGIN: '/',
+    REGISTER: '/register',
+  },
   HOME: '/home',
 }

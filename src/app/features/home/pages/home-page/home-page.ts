@@ -29,5 +29,5 @@ export class HomePage {
     this.authService.logout().pipe(take(1)).subscribe({ error: () => undefined });
 
     this.authStoreService.clearSession();
-    this.router.navigate([ROUTES_CONSTANTS.AUTH]);
+    this.router.navigate([ROUTES_CONSTANTS.AUTH.LOGIN]);
   }}

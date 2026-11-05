@@ -1,0 +1,39 @@
+<form (ngSubmit)="submit()">
+
+  <fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4" 
+    [disabled]="disabled()">
+
+    <legend class="fieldset-legend">Register</legend>
+
+    @if (errorMessage()) {
+      <app-message-error-component [message]="errorMessage()"/>
+    }
+
+    <label for="email" class="label">Email</label>
+    <input type="email" class="input" placeholder="Email" 
+      #emailInput
+      (input)="updateEmail(emailInput.value)" />
+
+    <label for="password" class="label">Password</label>
+    <input type="password" class="input" placeholder="Password" 
+      #passwordInput
+      (input)="updatePassword(passwordInput.value)" />
+
+    <label for="confirmPassword" class="label">Confirm Password</label>
+    <input type="password" class="input" placeholder="Confirm Password" 
+      #confirmPasswordInput
+      (input)="updateConfirmPassword(confirmPasswordInput.value)" />
+
+    <button type="submit" class="btn btn-neutral mt-4">
+      @if (isLoading()) {
+        <app-loading-component/>
+        <span>Loading...</span>
+      } @else {
+        Register
+      }
+    </button>
+
+    <a (click)="navigateToLogin()" class="link link-secondary">Login</a>
+  </fieldset>
+
+</form>
