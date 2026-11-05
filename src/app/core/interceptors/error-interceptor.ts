@@ -13,9 +13,13 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       // Detalle técnico solo en desarrollo; al usuario, mensaje humano.
       loggerService.error('HttpInterceptor', `${req.method} ${req.url} -> ${error.status}`, error);
 
-      // 401 lo gobierna el authInterceptor: o lo recupera (refresh+retry) o hace
-      // logout con redirección. Mostrar toast aquí sería ruido duplicado.
-      if (error.status !== 401) {
+      // Un 401 en una petición AUTENTICADA (con Bearer) lo gobierna el
+      // authInterceptor: o lo recupera (refresh+retry) o hace logout+redirect.
+      // Un 401 sin Bearer (login/register público) SÍ debe mostrarse.
+      const isAuthenticatedRequest = req.headers.has('Authorization');
+      const silent = error.status === 401 && isAuthenticatedRequest;
+
+      if (!silent) {
         errorService.show(buildUserMessage(error));
       }
 

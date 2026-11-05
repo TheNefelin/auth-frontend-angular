@@ -11,7 +11,17 @@ import { ROUTES_CONSTANTS } from '@shared/constants/routes-constant';
 
 const API_ORIGIN = 'http://127.0.0.1:8000';
 const REFRESH_URL = `${API_ORIGIN}/auth/refresh`;
-const LOGOUT_URL = `${API_ORIGIN}/auth/logout`;
+
+// Endpoints de autenticación pública: un 401 aquí significa "credenciales
+// incorrectas" (o token de proveedor inválido), NO "sesión expirada".
+// No debe dispararse el refresh ni el logout automático sobre ellos.
+const AUTH_PUBLIC_URLS = [
+  REFRESH_URL,
+  `${API_ORIGIN}/auth/login`,
+  `${API_ORIGIN}/auth/register`,
+  `${API_ORIGIN}/auth/google`,
+  `${API_ORIGIN}/auth/logout`,
+];
 
 interface RefreshResponse {
   access_token: string;
@@ -34,10 +44,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: unknown) => {
       const isUnauthorized = error instanceof HttpErrorResponse && error.status === 401;
 
-      // Nunca reintentar sobre refresh/logout ni sobre peticiones externas:
-      // renovar no tiene sentido para cerrar sesión.
-      const isAuthLifecycle = req.url === REFRESH_URL || req.url === LOGOUT_URL;
-      if (!isUnauthorized || !isApiRequest || isAuthLifecycle) {
+      // No reintentar con refresh sobre endpoints de auth pública ni
+      // peticiones externas: un 401 ahí es "credenciales incorrectas".
+      const isAuthPublic = AUTH_PUBLIC_URLS.includes(req.url);
+      if (!isUnauthorized || !isApiRequest || isAuthPublic) {
         return throwError(() => error);
       }
 
