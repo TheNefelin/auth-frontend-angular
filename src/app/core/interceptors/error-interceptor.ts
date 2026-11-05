@@ -13,8 +13,11 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       // Detalle técnico solo en desarrollo; al usuario, mensaje humano.
       loggerService.error('HttpInterceptor', `${req.method} ${req.url} -> ${error.status}`, error);
 
-      const message = buildUserMessage(error);
-      errorService.show(message);
+      // 401 lo gobierna el authInterceptor: o lo recupera (refresh+retry) o hace
+      // logout con redirección. Mostrar toast aquí sería ruido duplicado.
+      if (error.status !== 401) {
+        errorService.show(buildUserMessage(error));
+      }
 
       // No se traga el error: los callers pueden actuar sobre él.
       return throwError(() => error);
