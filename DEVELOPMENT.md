@@ -15,12 +15,12 @@ Se conecta con el backend FastAPI para login, Google, GitHub, Apple, refresh y l
 
 | Capa | Tecnología | Estado |
 |------|-----------|--------|
-| Framework | Angular 21+ (signal-based) | Existente |
-| Styling | Tailwind CSS + DaisyUI | Por definir |
-| Estado | Signals (no `subscribe` manual en componentes) | Por definir |
-| HTTP | `httpResource` / `rxResource` | Por definir |
-| Tests | vitest | Por definir |
-| Build | `ng build` | Por definir |
+| Framework | Angular 22 (signal-based) | Existente |
+| Styling | Tailwind CSS + DaisyUI | En uso |
+| Estado | Signals (no `subscribe` manual en componentes) | En uso |
+| HTTP | `httpResource` / `HttpClient` + interceptores funcionales | En uso |
+| Tests | vitest (`ng test`) | 18/18 |
+| Build | `ng build` | OK |
 
 ---
 
@@ -60,25 +60,27 @@ frontend-python/
 
 ## 4. Decisiones de diseño (aceptadas)
 
-| Decisión | Justificación |
-|----------|---------------|
-| Estado con signals, sin `subscribe()` en componentes | Estado reactivo declarativo, sin fugas ni valores stale |
-| `httpResource`/`rxResource` para lecturas | `isLoading`/`error`/`value` gratis y cancelación automática |
-| Un `MutationService` para escrituras | Un solo patrón de guardado, error y cierre de modal |
-| `OnPush` en todo | Menos detección de cambios, mejor rendimiento |
-| Sin `NgModule`, sin `*ngIf`/`*ngFor` | Piso Angular 21+, control flow `@if`/`@for` |
-| DTO `/auth/google` espejo de la respuesta real; la página orquesta el flujo (Google→API→store→navegar); `AuthStore` = estado puro (token, sin Router/HTTP); perfil vía `/auth/me` en fase backend (Aceptado) | Contrato honesto con el backend; servicios con una sola responsabilidad | |
+| Decisión | Justificación | Estado |
+|----------|---------------|--------|
+| Estado con signals, sin `subscribe()` en componentes | Estado reactivo declarativo, sin fugas ni valores stale | Aceptado |
+| `httpResource` para lecturas | `isLoading`/`error`/`value` gratis y cancelación automática | Aceptado |
+| `OnPush` en componentes presentacionales | Menos detección de cambios, mejor rendimiento | Aceptado |
+| Sin `NgModule`, sin `*ngIf`/`*ngFor` | Piso Angular 21+, control flow `@if`/`@for` | Aceptado |
+| Login: página orquesta (Google→API→store→navegar); `AuthStoreService` guarda access+refresh | Servicios con una sola responsabilidad | Aceptado |
+| `auth-interceptor` (Bearer + refresh en 401) **por dentro** de `error-interceptor` | El refresh resuelve el 401 antes de que el error lo vea (sin toast falso); sin toast en 401 | Aceptado |
+| `authGuard` de sesión (presencia, sin red) en `/home` | Ruta privada; el rol se resolverá en guard async aparte | Aceptado |
+| `/home` en `RenderMode.Client` (SSR no ve localStorage) | Evita redirección falsa en prerender | Aceptado |
 
 ---
 
-## 5. Pendientes (out of scope actual) — El usuario trabajará aquí primero
+## 5. Pendientes
 
-- [ ] Revisar estructura Angular existente.
-- [ ] Conectar mockup con endpoints reales del backend.
-- [ ] Implementar formularios de login con Angular signals.
-- [ ] Implementar interceptores de autenticación (JWT).
-- [ ] Implementar MFA/2FA en frontend (código TOTP).
-- [ ] Agregar protección contra XSS y CSRF.
+- [ ] `forbidden` + guard de rol (el rol aún no autoriza rutas).
+- [ ] Replicar el flujo en GitHub / Apple / login clásico.
+- [ ] Tests de integración con backend (hoy solo unitarios).
+- [ ] MFA/2FA en frontend (código TOTP).
+- [ ] `pnpm lint` (no existe; solo `ng build` + tests).
+- [ ] Evaluar cookie `HttpOnly` (BFF) frente a tokens en `localStorage` (riesgo XSS conocido).
 
 ---
 
