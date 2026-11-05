@@ -3,6 +3,6 @@
   <app-auth-google-component [loading]="loadingGoogle()" [disabled]="disabled()" (login)="loginGoogle()"/>
   <app-auth-github-component [loading]="loadingGitHub()" [disabled]="disabled()" (login)="loginGitHub()"/>
   <app-auth-apple-component [loading]="loadingApple()" [disabled]="disabled()" (login)="loginApple()"/>
-  <app-auth-login-component [loading]="loadingAuth()" [disabled]="disabled()" (login)="loginAuth()"/>
+  <app-auth-login-component [isLoading]="loadingAuth()" [disabled]="disabled()" (submitted)="loginAuth($event)"/>
 
 </section>

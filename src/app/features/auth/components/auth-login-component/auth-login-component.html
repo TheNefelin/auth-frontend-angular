@@ -1,26 +1,35 @@
-<fieldset 
-  [disabled]="disabled()"
-  class="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+<form (ngSubmit)="submit()">
 
-  <legend class="fieldset-legend">Login</legend>
+  <fieldset
+    [disabled]="disabled()"
+    class="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
 
-  <label for="email" class="label">Email</label>
-  <input type="email" class="input" placeholder="Email" />
+    <legend class="fieldset-legend">Login</legend>
 
-  <label for="password" class="label">Password</label>
-  <input type="password" class="input" placeholder="Password" />
-
-  <button 
-    (click)="login.emit()"
-    class="btn btn-neutral mt-4">
-    
-    @if (loading()) {
-      <app-loading-component/>
-      <span>Loading...</span>
-    } @else {
-      Login
+    @if (errorMessage()) {
+      <app-message-error-component [message]="errorMessage()"/>
     }
-  </button>
 
-  <a (click)="navigateToRegister()" class="link link-secondary">Register</a>
-</fieldset>
+    <label for="email" class="label">Email</label>
+    <input type="email" class="input" placeholder="Email"
+      #emailInput
+      (input)="updateEmail(emailInput.value)" />
+
+    <label for="password" class="label">Password</label>
+    <input type="password" class="input" placeholder="Password"
+      #passwordInput
+      (input)="updatePassword(passwordInput.value)" />
+
+    <button type="submit" class="btn btn-neutral mt-4">
+      @if (isLoading()) {
+        <app-loading-component/>
+        <span>Loading...</span>
+      } @else {
+        Login
+      }
+    </button>
+
+    <a (click)="navigateToRegister()" class="link link-secondary">Register</a>
+  </fieldset>
+
+</form>

@@ -8,7 +8,7 @@ import { AuthAppleComponent } from "@features/auth/components/auth-apple-compone
 import { AuthLoginComponent } from "@features/auth/components/auth-login-component/auth-login-component";
 import { AuthGoogleService } from "@features/auth/services/auth-google-service";
 import { AuthService } from "@features/auth/services/auth-service";
-import { ApiAuthGoogleRequest } from "@features/auth/models/models";
+import { ApiAuthGoogleRequest, LoginForm } from "@features/auth/models/models";
 import { ROUTES_CONSTANTS } from "@shared/constants/routes-constant";
 import { ToastService } from "@core/services/toast-service";
 import { ErrorService } from "@core/services/error-service";
@@ -70,9 +70,27 @@ export class AuthPage {
     this.disabled.set(true);
   }
 
-  protected async loginAuth(): Promise<void> {
+  protected async loginAuth(form: LoginForm): Promise<void> {
     this.loadingAuth.set(true);
     this.disabled.set(true);
+
+    try {
+      const response = await firstValueFrom(this.authService.login(form));
+
+      this.authStoreService.setSession(response.access_token, response.refresh_token);
+
+      this.toastService.show('Inicio de sesión exitoso', 'success');
+      await this.router.navigate([ROUTES_CONSTANTS.HOME]);
+    } catch (error: unknown) {
+      this.loggerService.error('AuthPage', 'loginAuth', error);
+      // HTTP: el errorInterceptor ya mostró el toast; no duplicarlo aquí.
+      if (!(error instanceof HttpErrorResponse)) {
+        this.errorService.show(this.describeError(error));
+      }
+    } finally {
+      this.loadingAuth.set(false);
+      this.disabled.set(false);
+    }
   }
 
   private describeError(error: unknown): string {
