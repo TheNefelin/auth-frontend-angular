@@ -13,7 +13,7 @@ Fase 1 del BFF: proxy `/ssr-api` conectado. Fase 2 (cookies HttpOnly) pendiente.
   - `src/server/config.ts`: carga `.env` con `process.loadEnvFile` (el entorno real manda); exige `API_URL`/`API_KEY`.
   - `src/server/proxy/api-proxy.ts`: añade `X-API-Key`, quita el prefijo, filtra hop-by-hop, repone `Set-Cookie`, 502 RFC 9457.
   - `environment.apiUrl = '/ssr-api'`; `auth-interceptor` usa ese prefijo; su spec toma la URL del environment.
-  - `src/server/middleware/security-headers.ts`: disponible, **sin montar**.
+  - El CSP vive solo en el `<meta>` de `index.html` (el middleware de Express era código muerto: se eliminó).
 - **Verificado**: `ng build` OK; `ng test` **20/20**; en `ng serve` y en el build SSR: `/ssr-api/health` 200, `/ssr-api/auth/me` 401, `/ssr-api/auth/login` 401 (body reenviado); navegador sin errores de consola. `API_KEY` no aparece en el bundle del cliente.
 - Flujo auth sin cambios funcionales: los tokens siguen en `localStorage` hasta Fase 2.
 

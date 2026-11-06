@@ -4,8 +4,14 @@
   <meta charset="utf-8">
   <title>Auth</title>
   <base href="/">
-  <!-- Content Security Policy - Permissive for development (must be first meta) -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https:; connect-src 'self' https: http://localhost:8000 http://127.0.0.1:8000 ws: wss:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' https: data:; frame-src https://accounts.google.com;">
+  <!--
+    Content Security Policy (desarrollo). El navegador solo llama a /ssr-api
+    (mismo origen -> 'self'); el BFF reenvía a la API. Por eso ya no se
+    necesitan las entradas a localhost:8000 ni ws/wss.
+    Google Identity Services requiere script-src/frame-src de accounts.google.com.
+    Pendiente (producción): endurecer con hashes/nonces y quitar unsafe-inline/eval.
+  -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' https: data:; frame-src https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self';">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>

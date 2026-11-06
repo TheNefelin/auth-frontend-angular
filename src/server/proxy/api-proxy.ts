@@ -1,16 +1,18 @@
 import { Router, type Request, type Response } from 'express';
-import { serverConfig } from '../config';
+import { serverConfig } from '@server/config';
+import { environment } from '@environments/environment';
 
 /**
  * Proxy del BFF: reenvía `/ssr-api/*` a la API FastAPI añadiendo `X-API-Key`.
  *
  * Objetivo: el navegador nunca conoce la URL real de la API ni la API Key.
- * El prefijo `/ssr-api` se elimina antes de reenviar (p. ej.
+ * El prefijo (`environment.apiUrl`) se elimina antes de reenviar (p. ej.
  * `/ssr-api/auth/me` → `${apiUrl}/auth/me`).
  */
 export const apiProxy = Router();
 
-const PREFIX = '/ssr-api';
+// Fuente única del prefijo: el mismo que usa el cliente.
+const PREFIX = environment.apiUrl;
 
 // Cabeceras que gestiona el proxy/servidor y no deben reenviarse tal cual.
 const SKIP_HEADERS = new Set([

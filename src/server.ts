@@ -6,20 +6,24 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
-import { apiProxy } from './server/proxy/api-proxy';
+// [BFF] nuestro: prepara el entorno y monta el proxy (no son del scaffold).
+// `env` va PRIMERO: deja process.env listo antes de que config lo lea.
+import '@server/env';
+import { apiProxy } from '@server/proxy/api-proxy';
+import { environment } from '@environments/environment';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
 
-/**
- * BFF: reenvía `/ssr-api/*` a la API FastAPI añadiendo `X-API-Key`.
- * El navegador nunca conoce la URL real ni la clave.
- * El parser JSON se acota al prefijo: las rutas de Angular SSR no lo necesitan.
- */
-app.use('/ssr-api', express.json());
-app.use('/ssr-api', apiProxy);
+// [BFF] ── Inicio del código propio ─────────────────────────────────────────
+// Todo lo de este bloque es nuestro (BFF), NO parte del server.ts original:
+// monta el proxy que oculta la URL de la API y añade X-API-Key.
+const apiPrefix = environment.apiUrl;
+app.use(apiPrefix, express.json());
+app.use(apiPrefix, apiProxy);
+// [BFF] ── Fin del código propio ────────────────────────────────────────────
 
 /**
  * Serve static files from /browser
