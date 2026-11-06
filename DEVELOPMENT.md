@@ -19,7 +19,7 @@ Se conecta con el backend FastAPI para login, Google, GitHub, Apple, refresh y l
 | Styling | Tailwind CSS + DaisyUI | En uso |
 | Estado | Signals (no `subscribe` manual en componentes) | En uso |
 | HTTP | `httpResource` / `HttpClient` + interceptores funcionales | En uso |
-| Tests | vitest (`ng test`) | 18/18 |
+| Tests | vitest (`ng test`) | 20/20 |
 | Build | `ng build` | OK |
 
 ---
@@ -63,11 +63,14 @@ frontend-python/
 | Decisión | Justificación | Estado |
 |----------|---------------|--------|
 | Estado con signals, sin `subscribe()` en componentes | Estado reactivo declarativo, sin fugas ni valores stale | Aceptado |
-| `httpResource` para lecturas | `isLoading`/`error`/`value` gratis y cancelación automática | Aceptado |
+| `rxResource` para lecturas (llama a servicios) | `isLoading`/`error`/`value` gratis; la página no arma URLs | Aceptado |
 | `OnPush` en componentes presentacionales | Menos detección de cambios, mejor rendimiento | Aceptado |
 | Sin `NgModule`, sin `*ngIf`/`*ngFor` | Piso Angular 21+, control flow `@if`/`@for` | Aceptado |
-| Login: página orquesta (Google→API→store→navegar); `AuthStoreService` guarda access+refresh | Servicios con una sola responsabilidad | Aceptado |
-| `auth-interceptor` (Bearer + refresh en 401) **por dentro** de `error-interceptor` | El refresh resuelve el 401 antes de que el error lo vea (sin toast falso); sin toast en 401 | Aceptado |
+| Página orquesta (llama al servicio + store + navega); componente presentacional emite | Servicios con una sola responsabilidad | Aceptado |
+| `AuthService` solo HTTP; nunca navega ni toca el store | Datos ≠ UI; el flujo vive en página/interceptor | Aceptado |
+| URL base en `environment.apiUrl` (fuente única) | Sin hardcode duplicado | Aceptado |
+| `auth-interceptor`: criterio "llevaba Bearer" (sin lista de URLs); refresh vía `AuthService.refresh` (HttpContext SKIP) | Interceptor delgado, sin rutas de negocio ni ciclos | Aceptado |
+| `error-interceptor`: silencia 401 solo en peticiones autenticadas | Un 401 de login (sin Bearer) sí se muestra | Aceptado |
 | `authGuard` de sesión (presencia, sin red) en `/home` | Ruta privada; el rol se resolverá en guard async aparte | Aceptado |
 | `/home` en `RenderMode.Client` (SSR no ve localStorage) | Evita redirección falsa en prerender | Aceptado |
 
@@ -75,11 +78,13 @@ frontend-python/
 
 ## 5. Pendientes
 
-- [ ] Detección de reuso del refresh (revocar la familia de sesiones).
-- [ ] Replicar el flujo en GitHub / Apple / login clásico.
+- [ ] GitHub / Apple (stubs).
+- [ ] `/auth/connect` (unificar cuentas: mismo usuario con Google + local).
+- [ ] Verificación de email.
 - [ ] Tests de integración con backend (hoy solo unitarios).
 - [ ] MFA/2FA en frontend (código TOTP).
 - [ ] `pnpm lint` (no existe; solo `ng build` + tests).
+- [ ] Limpiar `ApiService` (métodos muertos) y `message-error-component` (`text-white`).
 - [ ] Evaluar cookie `HttpOnly` (BFF) frente a tokens en `localStorage` (riesgo XSS conocido).
 
 ---
