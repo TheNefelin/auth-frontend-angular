@@ -8,7 +8,7 @@ import { environment } from '@environments/environment';
 import { SKIP_AUTH_INTERCEPTOR } from './auth-context';
 import { ROUTES_CONSTANTS } from '@shared/constants/routes-constant';
 
-const API_ORIGIN = environment.apiUrl;
+const API_PREFIX = environment.apiUrl;
 
 /**
  * Añade el Bearer a las llamadas a la API propia y renueva la sesión en 401.
@@ -22,7 +22,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  const isApiRequest = req.url.startsWith(API_ORIGIN);
+  const isApiRequest = req.url.startsWith(API_PREFIX);
   const skip = req.context.get(SKIP_AUTH_INTERCEPTOR);
   const token = authStoreService.readStoredToken();
   const wasAuthenticated = isApiRequest && !skip && !!token;

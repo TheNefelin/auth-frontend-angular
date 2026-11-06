@@ -35,6 +35,8 @@ frontend-python/
 │   ├── AGENTS.md
 │   ├── session.md
 │   └── skills/angular
+├── .env                    → secretos del servidor (fuera de Git)
+├── .env.demo               → plantilla versionada
 ├── package.json
 ├── pnpm-lock.yaml
 ├── tsconfig.json
@@ -46,6 +48,8 @@ frontend-python/
 │   │   ├── app.routes.ts
 │   │   ├── core/           → servicios base, interceptores, guards
 │   │   └── features/       → features por dominio (auth, users, etc.)
+│   ├── server.ts            → Express SSR: monta /ssr-api y renderiza Angular
+│   ├── server/              → BFF (solo servidor): config.ts, proxy/, middleware/
 │   ├── index.html
 │   ├── main.ts
 │   └── styles.css
@@ -68,7 +72,8 @@ frontend-python/
 | Sin `NgModule`, sin `*ngIf`/`*ngFor` | Piso Angular 21+, control flow `@if`/`@for` | Aceptado |
 | Página orquesta (llama al servicio + store + navega); componente presentacional emite | Servicios con una sola responsabilidad | Aceptado |
 | `AuthService` solo HTTP; nunca navega ni toca el store | Datos ≠ UI; el flujo vive en página/interceptor | Aceptado |
-| URL base en `environment.apiUrl` (fuente única) | Sin hardcode duplicado | Aceptado |
+| URL base del cliente: `environment.apiUrl = '/ssr-api'` (mismo origen) | Sin hardcode; el BFF oculta la URL real y la API Key | Aceptado |
+| BFF: `src/server/config.ts` carga `.env` con `process.loadEnvFile` (el entorno real manda) | `ng serve` no pasa `--env-file`; cero dependencias | Aceptado |
 | `auth-interceptor`: criterio "llevaba Bearer" (sin lista de URLs); refresh vía `AuthService.refresh` (HttpContext SKIP) | Interceptor delgado, sin rutas de negocio ni ciclos | Aceptado |
 | `error-interceptor`: silencia 401 solo en peticiones autenticadas | Un 401 de login (sin Bearer) sí se muestra | Aceptado |
 | `authGuard` de sesión (presencia, sin red) en `/home` | Ruta privada; el rol se resolverá en guard async aparte | Aceptado |
@@ -85,7 +90,7 @@ frontend-python/
 - [ ] MFA/2FA en frontend (código TOTP).
 - [ ] `pnpm lint` (no existe; solo `ng build` + tests).
 - [ ] Limpiar `ApiService` (métodos muertos) y `message-error-component` (`text-white`).
-- [ ] Evaluar cookie `HttpOnly` (BFF) frente a tokens en `localStorage` (riesgo XSS conocido).
+- [ ] Fase 2 del BFF: sesión en cookies `HttpOnly`; retirar tokens de `localStorage` y `auth-interceptor`; CSRF.
 
 ---
 

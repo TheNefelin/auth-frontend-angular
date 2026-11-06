@@ -11,8 +11,9 @@ import {
 import { provideRouter, Router } from '@angular/router';
 import { authInterceptor } from './auth-interceptor';
 import { AuthStoreService } from '@core/services/auth-store-service';
+import { environment } from '@environments/environment';
 
-const API = 'http://127.0.0.1:8000';
+const API = environment.apiUrl;
 
 describe('authInterceptor', () => {
   let http: HttpClient;

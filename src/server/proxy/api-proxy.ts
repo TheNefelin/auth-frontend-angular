@@ -7,49 +7,51 @@ import { serverConfig } from '../config';
  * Objetivo: el navegador nunca conoce la URL real de la API ni la API Key.
  * El prefijo `/ssr-api` se elimina antes de reenviar (p. ej.
  * `/ssr-api/auth/me` → `${apiUrl}/auth/me`).
- *
- * NO montado todavía en server.ts (Paso 1: solo infraestructura).
  */
 export const apiProxy = Router();
 
 const PREFIX = '/ssr-api';
 
-// Cabeceras del cliente que NO deben reenviarse (las gestiona el proxy/servidor).
-const HOP_BY_HOP = new Set([
+// Cabeceras que gestiona el proxy/servidor y no deben reenviarse tal cual.
+const SKIP_HEADERS = new Set([
   'host',
   'connection',
   'content-length',
   'transfer-encoding',
+  'content-encoding',
+  'set-cookie',
 ]);
 
 apiProxy.use(async (req: Request, res: Response) => {
-  // req.originalUrl empieza con /ssr-api → se quita el prefijo.
-  const path = req.originalUrl.replace(PREFIX, '');
-  const targetUrl = `${serverConfig.apiUrl}${path}`;
+  // originalUrl conserva el prefijo del montaje → lo quitamos.
+  const targetUrl = `${serverConfig.apiUrl}${req.originalUrl.slice(PREFIX.length)}`;
 
   const headers = new Headers();
   for (const [key, value] of Object.entries(req.headers)) {
-    if (value === undefined || HOP_BY_HOP.has(key.toLowerCase())) continue;
+    if (value === undefined || SKIP_HEADERS.has(key.toLowerCase())) continue;
     headers.set(key, Array.isArray(value) ? value.join(',') : value);
   }
   headers.set('X-API-Key', serverConfig.apiKey);
 
-  const hasBody = !['GET', 'HEAD'].includes(req.method);
+  const hasBody = req.body !== undefined && !['GET', 'HEAD'].includes(req.method);
 
   try {
     const upstream = await fetch(targetUrl, {
       method: req.method,
       headers,
-      body: hasBody ? JSON.stringify(req.body ?? {}) : undefined,
+      body: hasBody ? JSON.stringify(req.body) : undefined,
     });
 
     res.status(upstream.status);
     upstream.headers.forEach((value, key) => {
-      if (!HOP_BY_HOP.has(key.toLowerCase())) res.setHeader(key, value);
+      if (!SKIP_HEADERS.has(key.toLowerCase())) res.setHeader(key, value);
     });
+    // undici une varias Set-Cookie en una sola cadena; las reponemos por separado.
+    for (const cookie of upstream.headers.getSetCookie()) {
+      res.append('Set-Cookie', cookie);
+    }
 
-    const body = await upstream.text();
-    res.send(body);
+    res.send(await upstream.text());
   } catch {
     res.status(502).json({
       type: 'bad-gateway',

@@ -6,6 +6,7 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
+import { apiProxy } from './server/proxy/api-proxy';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
@@ -13,16 +14,12 @@ const app = express();
 const angularApp = new AngularNodeAppEngine();
 
 /**
- * Example Express Rest API endpoints can be defined here.
- * Uncomment and define endpoints as necessary.
- *
- * Example:
- * ```ts
- * app.get('/api/{*splat}', (req, res) => {
- *   // Handle API request
- * });
- * ```
+ * BFF: reenvía `/ssr-api/*` a la API FastAPI añadiendo `X-API-Key`.
+ * El navegador nunca conoce la URL real ni la clave.
+ * El parser JSON se acota al prefijo: las rutas de Angular SSR no lo necesitan.
  */
+app.use('/ssr-api', express.json());
+app.use('/ssr-api', apiProxy);
 
 /**
  * Serve static files from /browser

@@ -5,23 +5,25 @@
 
 ## Tarea activa
 
-Auth frontend: Google + register + login clásico (local) e2e. Core refactorizado.
+Fase 1 del BFF: proxy `/ssr-api` conectado. Fase 2 (cookies HttpOnly) pendiente.
 
 ## Último avance comprobado
 
-- **Google e2e**: login, `/auth/me`, user-details (nombre/apellido/rol/provider/avatar), renovación silenciosa, idle 30 min/absoluto 1 día, guard `/home`, logout server-side, 404.
-- **Register**: `RegisterPage` → `AuthService.register` → `setSession` → `/home` (auto-login). Componente con validaciones (email, password 8-128, confirm) → `errorMessage`.
-- **Login clásico**: `auth-login-component` (form real + validaciones) → `AuthPage.loginAuth` → `AuthService.login` → `/home`.
-- **Fix 401**: login/register (sin Bearer) NO disparan refresh ni logout; `error-interceptor` muestra el 401 solo sin Bearer. `auth-interceptor`: criterio "llevaba Bearer" (sin lista de URLs); refresh vía `AuthService.refresh` (HttpContext SKIP).
-- **Refactor**: URL base en `environment.apiUrl`; `home-page` usa `rxResource` + `AuthService.me()` (no arma URL); modelos (`ApiAuth*`, `*Form`) y `isLoading`/`submitted` unificados; eliminados `AuthUser`/`Role` muertos.
-- Tests: **20/20** (`ng test`). `ng build` OK. `pnpm lint` no existe.
+- **BFF (Paso 2)**: `server.ts` monta `express.json()` + `/ssr-api` → `apiProxy`.
+  - `src/server/config.ts`: carga `.env` con `process.loadEnvFile` (el entorno real manda); exige `API_URL`/`API_KEY`.
+  - `src/server/proxy/api-proxy.ts`: añade `X-API-Key`, quita el prefijo, filtra hop-by-hop, repone `Set-Cookie`, 502 RFC 9457.
+  - `environment.apiUrl = '/ssr-api'`; `auth-interceptor` usa ese prefijo; su spec toma la URL del environment.
+  - `src/server/middleware/security-headers.ts`: disponible, **sin montar**.
+- **Verificado**: `ng build` OK; `ng test` **20/20**; en `ng serve` y en el build SSR: `/ssr-api/health` 200, `/ssr-api/auth/me` 401, `/ssr-api/auth/login` 401 (body reenviado); navegador sin errores de consola. `API_KEY` no aparece en el bundle del cliente.
+- Flujo auth sin cambios funcionales: los tokens siguen en `localStorage` hasta Fase 2.
 
 ## Pendientes
 
-- GitHub / Apple (stubs). `/auth/connect` (unificar cuentas). Verificación de email.
-- Limpiar `ApiService` (métodos muertos) y `message-error-component` (text-white).
+- **Fase 2**: cookies `HttpOnly`, sesión en el BFF, retirar `auth-interceptor`, CSRF.
+- **Backend**: conectar `verify_api_key` (`secrets.compare_digest`) en routers de datos (no login/register/google/health).
+- GitHub / Apple (stubs), `/auth/connect`, verificación de email.
 - `docs/auth-flow.md` §9 tiene el roadmap completo.
 
 ## Nota
 
-Prueba funcional pendiente del usuario: register/login local en navegador (los 5 pasos del flujo).
+Prueba funcional pendiente del usuario: login Google y login local por `/ssr-api` en navegador.
