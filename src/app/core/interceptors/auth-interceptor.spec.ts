@@ -106,4 +106,28 @@ describe('authInterceptor', () => {
     expect(store.hasSession()).toBe(true);
     httpMock.expectNone(`${API}/auth/refresh`);
   });
+
+  it('no refresca en un 401 de login (sin Bearer): credenciales incorrectas', () => {
+    // Sin sesión: la petición de login no lleva Bearer.
+    let errored = false;
+
+    http.post(`${API}/auth/login`, { email: 'a@b.com', password: 'mala' })
+      .subscribe({ error: () => (errored = true) });
+
+    httpMock.expectOne(`${API}/auth/login`).flush({}, { status: 401, statusText: 'Unauthorized' });
+
+    expect(errored).toBe(true);
+    httpMock.expectNone(`${API}/auth/refresh`);
+  });
+
+  it('no refresca si la petición de la API no llevaba Bearer (sesión vacía)', () => {
+    let errored = false;
+
+    http.get(`${API}/auth/me`).subscribe({ error: () => (errored = true) });
+
+    httpMock.expectOne(`${API}/auth/me`).flush({}, { status: 401, statusText: 'Unauthorized' });
+
+    expect(errored).toBe(true);
+    httpMock.expectNone(`${API}/auth/refresh`);
+  });
 });
