@@ -4,8 +4,7 @@
   [class.btn-primary]="icon() === 'create' || icon() === 'save'"
   [class.btn-warning]="icon() === 'edit'"
   [class.btn-error]="icon() === 'delete' || icon() === 'cancel'"
-  [class.btn-secondary]="icon() === 'clear' || icon() === 'refresh' || icon() === 'search' || icon() === 'goto'"
-  [class.text-white]="icon() === 'edit' || icon() === 'delete' || icon() === 'cancel'">
+  [class.btn-secondary]="icon() === 'clear' || icon() === 'refresh' || icon() === 'search' || icon() === 'goto'">
 
   @if (icon() === 'create') { <!-- Create -->
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
