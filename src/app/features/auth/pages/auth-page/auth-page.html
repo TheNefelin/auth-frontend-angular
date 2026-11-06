@@ -1,8 +1,8 @@
 <section class="grid gap-2 justify-center items-center p-4">
 
-  <app-auth-google-component [loading]="loadingGoogle()" [disabled]="disabled()" (login)="loginGoogle()"/>
-  <app-auth-github-component [loading]="loadingGitHub()" [disabled]="disabled()" (login)="loginGitHub()"/>
-  <app-auth-apple-component [loading]="loadingApple()" [disabled]="disabled()" (login)="loginApple()"/>
+  <app-auth-google-component [isLoading]="loadingGoogle()" [disabled]="disabled()" (submitted)="loginGoogle()"/>
+  <app-auth-github-component [isLoading]="loadingGitHub()" [disabled]="disabled()" (submitted)="loginGitHub()"/>
+  <app-auth-apple-component [isLoading]="loadingApple()" [disabled]="disabled()" (submitted)="loginApple()"/>
   <app-auth-login-component [isLoading]="loadingAuth()" [disabled]="disabled()" (submitted)="loginAuth($event)"/>
 
 </section>

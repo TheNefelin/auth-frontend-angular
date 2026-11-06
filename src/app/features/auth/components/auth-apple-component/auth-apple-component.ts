@@ -7,7 +7,7 @@ import { LoadingComponent } from "@shared/components/loading-component/loading-c
   templateUrl: './auth-apple-component.html',
 })
 export class AuthAppleComponent {
-  readonly loading = input<boolean>(false);
+  readonly isLoading = input<boolean>(false);
   readonly disabled = input<boolean>(false);
-  readonly login = output<void>();
+  readonly submitted = output<void>();
 }

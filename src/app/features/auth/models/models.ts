@@ -1,4 +1,7 @@
-export interface AuthTokenResponse {
+// --- SDK de Google Identity Services (GIS) ---
+
+/** Respuesta del script GIS (no es del backend). */
+export interface GoogleTokenResponse {
   access_token?: string;
   error?: string;
 }
@@ -11,7 +14,7 @@ export interface OAuth2Client {
   initTokenClient(config: {
     client_id: string;
     scope: string;
-    callback: (response: AuthTokenResponse) => void;
+    callback: (response: GoogleTokenResponse) => void;
     error_callback: (error: unknown) => void;
   }): TokenClient;
 }
@@ -19,6 +22,8 @@ export interface OAuth2Client {
 export interface GoogleAccounts {
   oauth2?: OAuth2Client;
 }
+
+// --- API del backend (contrato HTTP) ---
 
 export interface ApiAuthGoogleRequest {
   googleToken: string;
@@ -35,7 +40,7 @@ export interface ApiAuthRegisterRequest {
   password: string;
 }
 
-/** Respuesta de token común a login/register/google. */
+/** Respuesta de token común a login, register, google y refresh. */
 export interface ApiAuthTokenResponse {
   access_token: string;
   refresh_token: string;
@@ -43,20 +48,7 @@ export interface ApiAuthTokenResponse {
   expires_in: number;
 }
 
-// Modelos del contrato de usuario del backend (se usarán al integrar /auth/me).
-export interface AuthUser {
-  id_user: string;
-  email: string;
-  name?: string;
-  picture?: string;
-  profileComplete: boolean;
-  role: Role;
-}
-
-export enum Role {
-  Admin = 'Admin',
-  Reader = 'Lector',
-}
+// --- Formularios (UI) ---
 
 export interface LoginForm {
   email: string;

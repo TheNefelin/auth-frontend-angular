@@ -1,9 +1,9 @@
 <button
-  (click)="login.emit()"
+  (click)="submitted.emit()"
   [disabled]="disabled()"
   class="btn btn-neutral w-full">
 
-  @if (loading()) {
+  @if (isLoading()) {
     <app-loading-component/>
     <span>Loading...</span>
   } @else {

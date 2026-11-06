@@ -4,4 +4,4 @@ export const ROUTES_CONSTANTS = {
     REGISTER: '/register',
   },
   HOME: '/home',
-}
+} as const;
