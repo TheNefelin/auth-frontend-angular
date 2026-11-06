@@ -43,5 +43,11 @@ __screenshots__/
 .DS_Store
 Thumbs.db
 
+# Environment (secretos: NUNCA al repo; .env.demo sí se versiona como plantilla)
+.env
+.env.local
+.env.*.local
+!.env.demo
+
 # agent-baseline: respaldos de reinstalacion
 .baseline-backup/
