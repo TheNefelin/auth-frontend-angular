@@ -1,10 +1,11 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Service } from "@angular/core";
+import { environment } from '@environments/environment';
 
 @Service()
 export class ApiService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://127.0.0.1:8000';
+  private readonly baseUrl = environment.apiUrl;
 
   getAll<TResponse>(endpoint: string) {
     return this.http.get<TResponse>(`${this.baseUrl}/${endpoint}`);

@@ -3,6 +3,7 @@ import { Router } from "@angular/router";
 import { httpResource } from "@angular/common/http";
 import { take } from "rxjs";
 import { ROUTES_CONSTANTS } from "@shared/constants/routes-constant";
+import { environment } from "@environments/environment";
 import { AuthStoreService } from "@core/services/auth-store-service";
 import { AuthService } from "@features/auth/services/auth-service";
 import { UserDetailsComponent } from "@features/home/components/user-details-component/user-details-component";
@@ -20,7 +21,7 @@ export class HomePage {
 
   protected readonly profile = httpResource<UserProfile>(() => {
     if (!this.authStoreService.readStoredToken()) return undefined;
-    return { url: 'http://127.0.0.1:8000/auth/me', method: 'GET' as const };
+    return { url: `${environment.apiUrl}/auth/me`, method: 'GET' as const };
   });
 
   protected logout(): void {

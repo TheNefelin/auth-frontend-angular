@@ -2,6 +2,7 @@ import { inject, Service } from '@angular/core';
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ApiService } from '@core/services/api-service';
+import { environment } from '@environments/environment';
 import { SKIP_AUTH_INTERCEPTOR } from '@core/interceptors/auth-context';
 import {
   ApiAuthGoogleRequest,
@@ -43,7 +44,7 @@ export class AuthService {
   /** Renueva la sesión. Marcada para NO re-entrar al authInterceptor (evita ciclo). */
   refresh(refreshToken: string): Observable<ApiAuthTokenResponse> {
     return this.http.post<ApiAuthTokenResponse>(
-      `http://127.0.0.1:8000/${this.endpoint}/refresh`,
+      `${environment.apiUrl}/${this.endpoint}/refresh`,
       { refresh_token: refreshToken },
       { context: new HttpContext().set(SKIP_AUTH_INTERCEPTOR, true) },
     );

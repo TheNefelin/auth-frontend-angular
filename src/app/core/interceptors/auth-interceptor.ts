@@ -4,10 +4,11 @@ import { Router } from '@angular/router';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthStoreService } from '@core/services/auth-store-service';
 import { AuthService } from '@features/auth/services/auth-service';
+import { environment } from '@environments/environment';
 import { SKIP_AUTH_INTERCEPTOR } from './auth-context';
 import { ROUTES_CONSTANTS } from '@shared/constants/routes-constant';
 
-const API_ORIGIN = 'http://127.0.0.1:8000';
+const API_ORIGIN = environment.apiUrl;
 
 /**
  * Añade el Bearer a las llamadas a la API propia y renueva la sesión en 401.
