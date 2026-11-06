@@ -1,29 +1,38 @@
 import { HttpErrorResponse, HttpInterceptorFn } from "@angular/common/http";
 import { inject } from "@angular/core";
+import { Router } from "@angular/router";
 import { ErrorService } from "@core/services/error-service";
 import { LoggerService } from "@core/services/logger-service";
+import { AuthStoreService } from "@core/services/auth-store-service";
+import { ROUTES_CONSTANTS } from "@shared/constants/routes-constant";
 import { catchError, throwError } from "rxjs";
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const errorService = inject(ErrorService);
   const loggerService = inject(LoggerService);
+  const authStoreService = inject(AuthStoreService);
+  const router = inject(Router);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      // Detalle técnico solo en desarrollo; al usuario, mensaje humano.
       loggerService.error('HttpInterceptor', `${req.method} ${req.url} -> ${error.status}`, error);
 
-      // Un 401 en una petición AUTENTICADA (con Bearer) lo gobierna el
-      // authInterceptor: o lo recupera (refresh+retry) o hace logout+redirect.
-      // Un 401 sin Bearer (login/register público) SÍ debe mostrarse.
-      const isAuthenticatedRequest = req.headers.has('Authorization');
-      const silent = error.status === 401 && isAuthenticatedRequest;
-
-      if (!silent) {
-        errorService.show(buildUserMessage(error));
+      // 401 con sesión activa = sesión muerta (el BFF ya intentó refrescar).
+      if (error.status === 401 && authStoreService.isAuthenticated()) {
+        authStoreService.clearSession();
+        void router.navigate([ROUTES_CONSTANTS.AUTH.LOGIN]);
+        return throwError(() => error);
       }
 
-      // No se traga el error: los callers pueden actuar sobre él.
+      // 401 en /auth/me = el guard preguntando si hay sesión: silencioso,
+      // el guard se encarga del redirect a login.
+      const isMeRequest = req.url.includes('/auth/me');
+      if (error.status === 401 && isMeRequest) {
+        return throwError(() => error);
+      }
+
+      // Resto de errores (incluido 401 sin sesión = credenciales): se muestra.
+      errorService.show(buildUserMessage(error));
       return throwError(() => error);
     }),
   );
@@ -36,7 +45,6 @@ function buildUserMessage(error: HttpErrorResponse): string {
 
   const body: unknown = error.error;
 
-  // FastAPI 422: detail es un array de { loc, msg, type }.
   if (body && typeof body === 'object') {
     const detail = (body as { detail?: unknown }).detail;
 
@@ -58,7 +66,6 @@ function buildUserMessage(error: HttpErrorResponse): string {
     }
   }
 
-  // Body que no es JSON (p. ej. HTML de un proxy/gateway).
   if (typeof body === 'string' && body) {
     return 'Error inesperado del servidor.';
   }

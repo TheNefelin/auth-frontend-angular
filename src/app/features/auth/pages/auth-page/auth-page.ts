@@ -42,9 +42,9 @@ export class AuthPage {
     try {
       const googleToken = await this.authGoogleService.getAccessToken();
       const request: ApiAuthGoogleRequest = { googleToken };
-      const response = await firstValueFrom(this.authService.loginGoogle(request));
+      await firstValueFrom(this.authService.loginGoogle(request));
 
-      this.authStoreService.setSession(response.access_token, response.refresh_token);
+      this.authStoreService.setSession();
 
       this.toastService.show('Inicio de sesión exitoso', 'success');
       await this.router.navigate([ROUTES_CONSTANTS.HOME]);
@@ -77,7 +77,7 @@ export class AuthPage {
     try {
       const response = await firstValueFrom(this.authService.login(form));
 
-      this.authStoreService.setSession(response.access_token, response.refresh_token);
+      this.authStoreService.setSession();
 
       this.toastService.show('Inicio de sesión exitoso', 'success');
       await this.router.navigate([ROUTES_CONSTANTS.HOME]);

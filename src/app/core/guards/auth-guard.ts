@@ -1,6 +1,8 @@
 import { inject } from "@angular/core";
 import { CanActivateFn, Router } from "@angular/router";
+import { catchError, map, of } from "rxjs";
 import { AuthStoreService } from "@core/services/auth-store-service";
+import { AuthService } from "@features/auth/services/auth-service";
 import { ROUTES_CONSTANTS } from "@shared/constants/routes-constant";
 
 /**
@@ -15,12 +17,20 @@ import { ROUTES_CONSTANTS } from "@shared/constants/routes-constant";
  * se implementará como guard async aparte.
  */
 export const authGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
   const authStoreService = inject(AuthStoreService);
   const router = inject(Router);
 
-  if (authStoreService.hasSession()) {
-    return true;
-  }
-
-  return router.createUrlTree([ROUTES_CONSTANTS.AUTH.LOGIN]);
+  // Fase 2: el cliente no puede leer la cookie HttpOnly, así que la fuente de
+  // verdad es el servidor. La guardia pregunta /auth/me (asíncrona).
+  return authService.me().pipe(
+    map((profile) => {
+      authStoreService.setSession();
+      return true;
+    }),
+    catchError(() => {
+      authStoreService.clearSession();
+      return of(router.createUrlTree([ROUTES_CONSTANTS.AUTH.LOGIN]));
+    }),
+  );
 };

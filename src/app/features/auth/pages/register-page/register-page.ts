@@ -30,9 +30,9 @@ export class RegisterPage {
     this.loading.set(true);
 
     try {
-      const response = await firstValueFrom(this.authService.register(form));
+      await firstValueFrom(this.authService.register(form));
 
-      this.authStoreService.setSession(response.access_token, response.refresh_token);
+      this.authStoreService.setSession();
 
       this.toastService.show('Registro exitoso', 'success');
       await this.router.navigate([ROUTES_CONSTANTS.HOME]);

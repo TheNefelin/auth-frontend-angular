@@ -1,58 +1,24 @@
 import { Service, computed, signal } from '@angular/core';
 
-const TOKEN_KEY = 'jwt_token';
-const REFRESH_KEY = 'refresh_token';
-
+/**
+ * Estado de sesión del cliente (Fase 2: HttpOnly).
+ *
+ * El cliente NO guarda ni lee tokens: viven en cookies HttpOnly que solo el BFF
+ * puede usar. Aquí solo se guarda el *hecho* de tener sesión, para que la UI
+ * reaccione. La fuente de verdad real es el servidor (`/auth/me`).
+ */
 @Service()
 export class AuthStoreService {
-  private readonly tokenSignal = signal<string | null>(this.readFromStorage(TOKEN_KEY));
-  private readonly refreshSignal = signal<string | null>(this.readFromStorage(REFRESH_KEY));
+  private readonly hasSessionSignal = signal<boolean>(false);
 
-  readonly token = this.tokenSignal.asReadonly();
-  readonly hasSession = computed(() => !!this.tokenSignal() || !!this.refreshSignal());
+  readonly hasSession = this.hasSessionSignal.asReadonly();
+  readonly isAuthenticated = computed(() => this.hasSessionSignal());
 
-  setSession(accessToken: string, refreshToken?: string): void {
-    this.writeToStorage(TOKEN_KEY, accessToken);
-    this.tokenSignal.set(accessToken);
-
-    if (refreshToken) {
-      this.writeToStorage(REFRESH_KEY, refreshToken);
-      this.refreshSignal.set(refreshToken);
-    }
+  setSession(): void {
+    this.hasSessionSignal.set(true);
   }
 
   clearSession(): void {
-    this.removeFromStorage(TOKEN_KEY);
-    this.removeFromStorage(REFRESH_KEY);
-    this.tokenSignal.set(null);
-    this.refreshSignal.set(null);
-  }
-
-  readStoredToken(): string | null {
-    return this.tokenSignal();
-  }
-
-  readRefreshToken(): string | null {
-    return this.refreshSignal();
-  }
-
-  updateAccessToken(accessToken: string): void {
-    this.writeToStorage(TOKEN_KEY, accessToken);
-    this.tokenSignal.set(accessToken);
-  }
-
-  private readFromStorage(key: string): string | null {
-    if (typeof localStorage === 'undefined') return null;
-    return localStorage.getItem(key);
-  }
-
-  private writeToStorage(key: string, value: string): void {
-    if (typeof localStorage === 'undefined') return;
-    localStorage.setItem(key, value);
-  }
-
-  private removeFromStorage(key: string): void {
-    if (typeof localStorage === 'undefined') return;
-    localStorage.removeItem(key);
+    this.hasSessionSignal.set(false);
   }
 }

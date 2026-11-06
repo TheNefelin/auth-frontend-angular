@@ -1,39 +1,47 @@
 import { TestBed } from '@angular/core/testing';
-import { Router, UrlTree, provideRouter } from '@angular/router';
+import { Router, provideRouter, UrlTree } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { authGuard } from './auth-guard';
+import { AuthService } from '@features/auth/services/auth-service';
 import { AuthStoreService } from '@core/services/auth-store-service';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
 describe('authGuard', () => {
-  let store: AuthStoreService;
   let router: Router;
+  let httpMock: HttpTestingController;
 
   beforeEach(() => {
-    localStorage.clear();
-    TestBed.configureTestingModule({ providers: [provideRouter([])] });
-    store = TestBed.inject(AuthStoreService);
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
+    });
     router = TestBed.inject(Router);
+    httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => localStorage.clear());
+  afterEach(() => httpMock.verify());
 
   function runGuard() {
     return TestBed.runInInjectionContext(() => authGuard({} as never, {} as never));
   }
 
-  it('sin sesión redirige a / (login)', () => {
-    const result = runGuard();
-
+  it('sin sesión (401 en /me) redirige a login', async () => {
+    const result$ = runGuard() as ReturnType<typeof runGuard> & { subscribe?: unknown };
+    const promise = firstValueFrom(result$ as never);
+    httpMock.expectOne('/ssr-api/auth/me').flush({}, { status: 401, statusText: 'Unauthorized' });
+    const result = await promise;
     expect(result).toBeInstanceOf(UrlTree);
-    expect(String(result)).toBe(router.createUrlTree(['/']).toString());
   });
 
-  it('con sesión permite el acceso', () => {
-    store.setSession('access', 'refresh');
-    expect(runGuard()).toBe(true);
-  });
-
-  it('con solo refresh permite el acceso', () => {
-    store.setSession('', 'refresh');
-    expect(runGuard()).toBe(true);
+  it('con sesión (200 en /me) permite el acceso', async () => {
+    const result$ = runGuard() as never;
+    const promise = firstValueFrom(result$ as never);
+    httpMock.expectOne('/ssr-api/auth/me').flush({ id: '1' });
+    const result = await promise;
+    expect(result).toBe(true);
   });
 });

@@ -90,7 +90,8 @@ frontend-python/
 - [ ] MFA/2FA en frontend (código TOTP).
 - [ ] `pnpm lint` (no existe; solo `ng build` + tests).
 - [ ] Limpiar `ApiService` (métodos muertos) y `message-error-component` (`text-white`).
-- [ ] Fase 2 del BFF: sesión en cookies `HttpOnly`; retirar tokens de `localStorage` y `auth-interceptor`; CSRF.
+- [x] Fase 2 del BFF: sesión en cookies `HttpOnly`; tokens fuera del navegador; `auth-interceptor` retirado; `SameSite=Lax` (CSRF de doble envío pendiente).
+- [ ] CSRF de doble envío (cookie legible + cabecera `X-CSRF-Token`).
 
 ---
 

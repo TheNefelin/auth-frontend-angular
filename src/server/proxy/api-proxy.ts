@@ -5,16 +5,22 @@ import { environment } from '@environments/environment';
 /**
  * Proxy del BFF: reenvía `/ssr-api/*` a la API FastAPI añadiendo `X-API-Key`.
  *
- * Objetivo: el navegador nunca conoce la URL real de la API ni la API Key.
- * El prefijo (`environment.apiUrl`) se elimina antes de reenviar (p. ej.
- * `/ssr-api/auth/me` → `${apiUrl}/auth/me`).
+ * Fase 2: el BFF es el dueño de la sesión.
+ *   - Lee la cookie `access_token` y pone el `Authorization: Bearer` (si el
+ *     cliente no mandó uno: transición).
+ *   - En login/register/google/refresh: extrae los tokens de la respuesta,
+ *     los guarda en cookies HttpOnly y devuelve la respuesta SIN tokens.
+ *   - En 401: intenta refrescar con `refresh_token` y reintenta una vez.
+ *   - En logout: borra las cookies.
+ *
+ * El navegador nunca ve un token.
  */
 export const apiProxy = Router();
 
-// Fuente única del prefijo: el mismo que usa el cliente.
-const PREFIX = environment.apiUrl;
+const apiPrefix = environment.apiUrl;
+const apiUrl = serverConfig.apiUrl;
+const apiKey = serverConfig.apiKey;
 
-// Cabeceras que gestiona el proxy/servidor y no deben reenviarse tal cual.
 const SKIP_HEADERS = new Set([
   'host',
   'connection',
@@ -22,44 +28,122 @@ const SKIP_HEADERS = new Set([
   'transfer-encoding',
   'content-encoding',
   'set-cookie',
+  'cookie',
 ]);
 
+const AUTH_TOKEN_ENDPOINTS = /^\/auth\/(login|register|google|refresh)(\?|$)/;
+const LOGOUT_ENDPOINT = /^\/auth\/logout(\?|$)/;
+
+const isProd = process.env['NODE_ENV'] === 'production';
+
+function parseCookies(header: string | undefined): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!header) return out;
+  for (const part of header.split(';')) {
+    const idx = part.indexOf('=');
+    if (idx < 0) continue;
+    const key = part.slice(0, idx).trim();
+    const value = part.slice(idx + 1).trim();
+    if (key) out[key] = decodeURIComponent(value);
+  }
+  return out;
+}
+
+function cookieOpts(maxAge: number, httpOnly: boolean): string {
+  const parts = [`Path=/`, `SameSite=Lax`, `Max-Age=${maxAge}`];
+  if (httpOnly) parts.push('HttpOnly');
+  if (isProd) parts.push('Secure');
+  return parts.join('; ');
+}
+
+function setAccessCookie(res: Response, value: string, maxAgeSec: number): void {
+  res.append('Set-Cookie', `access_token=${encodeURIComponent(value)}; ${cookieOpts(maxAgeSec, true)}`);
+}
+
+function setRefreshCookie(res: Response, value: string, maxAgeSec: number): void {
+  res.append('Set-Cookie', `refresh_token=${encodeURIComponent(value)}; ${cookieOpts(maxAgeSec, true)}`);
+}
+
+function clearCookies(res: Response): void {
+  res.append('Set-Cookie', `access_token=; ${cookieOpts(0, true)}`);
+  res.append('Set-Cookie', `refresh_token=; ${cookieOpts(0, true)}`);
+}
+
+function forwardHeaders(upstream: globalThis.Response, res: Response): void {
+  upstream.headers.forEach((value, key) => {
+    if (!SKIP_HEADERS.has(key.toLowerCase())) res.setHeader(key, value);
+  });
+}
+
 apiProxy.use(async (req: Request, res: Response) => {
-  // originalUrl conserva el prefijo del montaje → lo quitamos.
-  const targetUrl = `${serverConfig.apiUrl}${req.originalUrl.slice(PREFIX.length)}`;
+  const path = req.originalUrl.slice(apiPrefix.length);
+  const targetUrl = `${apiUrl}${path}`;
+  const cookies = parseCookies(req.headers.cookie);
 
   const headers = new Headers();
   for (const [key, value] of Object.entries(req.headers)) {
     if (value === undefined || SKIP_HEADERS.has(key.toLowerCase())) continue;
     headers.set(key, Array.isArray(value) ? value.join(',') : value);
   }
-  headers.set('X-API-Key', serverConfig.apiKey);
+  if (cookies['access_token']) {
+    headers.set('Authorization', `Bearer ${cookies['access_token']}`);
+  } else if (req.headers.authorization) {
+    headers.set('Authorization', Array.isArray(req.headers.authorization)
+      ? req.headers.authorization.join(',')
+      : req.headers.authorization);
+  }
+  headers.set('X-API-Key', apiKey);
 
   const hasBody = req.body !== undefined && !['GET', 'HEAD'].includes(req.method);
+  const body = hasBody ? JSON.stringify(req.body) : undefined;
 
-  try {
-    const upstream = await fetch(targetUrl, {
-      method: req.method,
-      headers,
-      body: hasBody ? JSON.stringify(req.body) : undefined,
-    });
+  let upstream = await fetch(targetUrl, { method: req.method, headers, body });
 
-    res.status(upstream.status);
-    upstream.headers.forEach((value, key) => {
-      if (!SKIP_HEADERS.has(key.toLowerCase())) res.setHeader(key, value);
+  const isTokenEndpoint = AUTH_TOKEN_ENDPOINTS.test(path);
+  const isLogout = LOGOUT_ENDPOINT.test(path);
+
+  if (upstream.status === 401 && cookies['refresh_token'] && !isTokenEndpoint && !isLogout) {
+    const refreshRes = await fetch(`${apiUrl}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+      body: JSON.stringify({ refresh_token: cookies['refresh_token'] }),
     });
-    // undici une varias Set-Cookie en una sola cadena; las reponemos por separado.
-    for (const cookie of upstream.headers.getSetCookie()) {
-      res.append('Set-Cookie', cookie);
+    if (refreshRes.ok) {
+      const rd = await refreshRes.json() as Record<string, unknown>;
+      if (typeof rd['access_token'] === 'string') setAccessCookie(res, rd['access_token'] as string, Number(rd['expires_in'] ?? 900));
+      if (typeof rd['refresh_token'] === 'string') setRefreshCookie(res, rd['refresh_token'] as string, 60 * 60 * 24);
+      headers.set('Authorization', `Bearer ${rd['access_token']}`);
+      upstream = await fetch(targetUrl, { method: req.method, headers, body });
+    } else {
+      clearCookies(res);
     }
-
-    res.send(await upstream.text());
-  } catch {
-    res.status(502).json({
-      type: 'bad-gateway',
-      title: 'Bad gateway.',
-      status: 502,
-      detail: 'No se pudo contactar con la API.',
-    });
   }
+
+  if (isTokenEndpoint && upstream.ok) {
+    const text = await upstream.text();
+    let data: Record<string, unknown> | null = null;
+    try { data = JSON.parse(text) as Record<string, unknown>; } catch { data = null; }
+    if (data && (typeof data['access_token'] === 'string' || typeof data['refresh_token'] === 'string')) {
+      if (typeof data['access_token'] === 'string') setAccessCookie(res, data['access_token'] as string, Number(data['expires_in'] ?? 900));
+      if (typeof data['refresh_token'] === 'string') setRefreshCookie(res, data['refresh_token'] as string, 60 * 60 * 24);
+      const { access_token, refresh_token, ...rest } = data;
+      res.status(upstream.status);
+      forwardHeaders(upstream, res);
+      res.send(JSON.stringify(rest));
+      return;
+    }
+    res.status(upstream.status);
+    forwardHeaders(upstream, res);
+    res.send(text);
+    return;
+  }
+
+  if (isLogout) {
+    clearCookies(res);
+  }
+
+  const text = await upstream.text();
+  res.status(upstream.status);
+  forwardHeaders(upstream, res);
+  res.send(text);
 });
