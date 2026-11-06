@@ -7,7 +7,7 @@ export class ApiService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiUrl;
 
-  getAll<TResponse>(endpoint: string) {
+  get<TResponse>(endpoint: string) {
     return this.http.get<TResponse>(`${this.baseUrl}/${endpoint}`);
   }
 

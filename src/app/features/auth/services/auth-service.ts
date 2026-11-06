@@ -11,6 +11,7 @@ import {
   ApiAuthTokenResponse,
   RegisterForm,
 } from '@features/auth/models/models';
+import type { UserProfile } from '@core/models/user-profile';
 
 @Service()
 export class AuthService {
@@ -22,6 +23,10 @@ export class AuthService {
     return this.apiService.create<ApiAuthTokenResponse, ApiAuthGoogleRequest>(
       `${this.endpoint}/google`, item,
     );
+  }
+
+  me(): Observable<UserProfile> {
+    return this.apiService.get<UserProfile>(`${this.endpoint}/me`);
   }
 
   login(item: ApiAuthLoginRequest): Observable<ApiAuthTokenResponse> {

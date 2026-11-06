@@ -1,13 +1,11 @@
 import { Component, inject } from "@angular/core";
 import { Router } from "@angular/router";
-import { httpResource } from "@angular/common/http";
+import { rxResource } from "@angular/core/rxjs-interop";
 import { take } from "rxjs";
 import { ROUTES_CONSTANTS } from "@shared/constants/routes-constant";
-import { environment } from "@environments/environment";
 import { AuthStoreService } from "@core/services/auth-store-service";
 import { AuthService } from "@features/auth/services/auth-service";
 import { UserDetailsComponent } from "@features/home/components/user-details-component/user-details-component";
-import type { UserProfile } from "@core/models/user-profile";
 
 @Component({
   imports: [UserDetailsComponent],
@@ -19,9 +17,8 @@ export class HomePage {
   private readonly authStoreService = inject(AuthStoreService);
   private readonly authService = inject(AuthService);
 
-  protected readonly profile = httpResource<UserProfile>(() => {
-    if (!this.authStoreService.readStoredToken()) return undefined;
-    return { url: `${environment.apiUrl}/auth/me`, method: 'GET' as const };
+  protected readonly profile = rxResource({
+    stream: () => this.authService.me(),
   });
 
   protected logout(): void {
