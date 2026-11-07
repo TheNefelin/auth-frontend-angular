@@ -24,6 +24,4 @@ export const serverConfig = {
   apiUrl: required('API_URL'),
   /** API Key que el BFF añade a cada llamada a FastAPI (nunca al navegador). */
   apiKey: required('API_KEY'),
-  /** Client ID de Google (público, pero servido por el BFF si aplica). */
-  googleClientId: process.env['GOOGLE_CLIENT_ID'] ?? '',
 } as const;
