@@ -39,7 +39,14 @@ const AUTH_TOKEN_ENDPOINTS = /^\/auth\/(login|register|google|refresh)(\?|$)/;
 const LOGOUT_ENDPOINT = /^\/auth\/logout(\?|$)/;
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH']);
 
-const isProd = process.env['NODE_ENV'] === 'production';
+// Secure solo en producción real (HTTPS). En localhost (dev) no se pone,
+// porque las cookies Secure no se envían por HTTP y la sesión se perdería.
+function isSecureRequest(req: Request): boolean {
+  if (process.env['PRODUCTION'] !== 'true') return false;
+  const host = (req.headers.host || '').toLowerCase();
+  if (host.includes('localhost') || host.includes('127.0.0.1')) return false;
+  return true;
+}
 
 function parseCookies(header: string | undefined): Record<string, string> {
   const out: Record<string, string> = {};
@@ -54,31 +61,31 @@ function parseCookies(header: string | undefined): Record<string, string> {
   return out;
 }
 
-function cookieOpts(maxAge: number, httpOnly: boolean): string {
+function cookieOpts(maxAge: number, httpOnly: boolean, secure: boolean): string {
   const parts = [`Path=/`, `SameSite=Lax`, `Max-Age=${maxAge}`];
   if (httpOnly) parts.push('HttpOnly');
-  if (isProd) parts.push('Secure');
+  if (secure) parts.push('Secure');
   return parts.join('; ');
 }
 
-function setAccessCookie(res: Response, value: string, maxAgeSec: number): void {
-  res.append('Set-Cookie', `access_token=${encodeURIComponent(value)}; ${cookieOpts(maxAgeSec, true)}`);
+function setAccessCookie(res: Response, value: string, maxAgeSec: number, secure: boolean): void {
+  res.append('Set-Cookie', `access_token=${encodeURIComponent(value)}; ${cookieOpts(maxAgeSec, true, secure)}`);
 }
 
-function setRefreshCookie(res: Response, value: string, maxAgeSec: number): void {
-  res.append('Set-Cookie', `refresh_token=${encodeURIComponent(value)}; ${cookieOpts(maxAgeSec, true)}`);
+function setRefreshCookie(res: Response, value: string, maxAgeSec: number, secure: boolean): void {
+  res.append('Set-Cookie', `refresh_token=${encodeURIComponent(value)}; ${cookieOpts(maxAgeSec, true, secure)}`);
 }
 
 // Cookie legible por JS (NO HttpOnly): el cliente la lee y la reenvía como
 // cabecera X-CSRF-Token en peticiones mutantes (doble envío).
-function setCsrfCookie(res: Response, value: string, maxAgeSec: number): void {
-  res.append('Set-Cookie', `csrf_token=${value}; ${cookieOpts(maxAgeSec, false)}`);
+function setCsrfCookie(res: Response, value: string, maxAgeSec: number, secure: boolean): void {
+  res.append('Set-Cookie', `csrf_token=${value}; ${cookieOpts(maxAgeSec, false, secure)}`);
 }
 
-function clearCookies(res: Response): void {
-  res.append('Set-Cookie', `access_token=; ${cookieOpts(0, true)}`);
-  res.append('Set-Cookie', `refresh_token=; ${cookieOpts(0, true)}`);
-  res.append('Set-Cookie', `csrf_token=; ${cookieOpts(0, false)}`);
+function clearCookies(res: Response, secure: boolean): void {
+  res.append('Set-Cookie', `access_token=; ${cookieOpts(0, true, secure)}`);
+  res.append('Set-Cookie', `refresh_token=; ${cookieOpts(0, true, secure)}`);
+  res.append('Set-Cookie', `csrf_token=; ${cookieOpts(0, false, secure)}`);
 }
 
 function forwardHeaders(upstream: globalThis.Response, res: Response): void {
@@ -92,6 +99,7 @@ apiProxy.use(async (req: Request, res: Response) => {
   const targetUrl = `${apiUrl}${path}`;
   const cookies = parseCookies(req.headers.cookie);
   const method = req.method.toUpperCase();
+  const secure = isSecureRequest(req);
 
   // --- CSRF: doble envío en peticiones mutantes con sesión activa ---
   if (MUTATING_METHODS.has(method) && cookies['csrf_token']) {
@@ -138,14 +146,14 @@ apiProxy.use(async (req: Request, res: Response) => {
     });
     if (refreshRes.ok) {
       const rd = await refreshRes.json() as Record<string, unknown>;
-      if (typeof rd['access_token'] === 'string') setAccessCookie(res, rd['access_token'] as string, Number(rd['expires_in'] ?? 900));
-      if (typeof rd['refresh_token'] === 'string') setRefreshCookie(res, rd['refresh_token'] as string, 60 * 60 * 24);
+      if (typeof rd['access_token'] === 'string') setAccessCookie(res, rd['access_token'] as string, Number(rd['expires_in'] ?? 900), secure);
+      if (typeof rd['refresh_token'] === 'string') setRefreshCookie(res, rd['refresh_token'] as string, 60 * 60 * 24, secure);
       // Regenera el CSRF junto al access token.
-      setCsrfCookie(res, randomUUID(), Number(rd['expires_in'] ?? 900));
+      setCsrfCookie(res, randomUUID(), Number(rd['expires_in'] ?? 900), secure);
       headers.set('Authorization', `Bearer ${rd['access_token']}`);
       upstream = await fetch(targetUrl, { method: req.method, headers, body });
     } else {
-      clearCookies(res);
+      clearCookies(res, secure);
     }
   }
 
@@ -154,10 +162,10 @@ apiProxy.use(async (req: Request, res: Response) => {
     let data: Record<string, unknown> | null = null;
     try { data = JSON.parse(text) as Record<string, unknown>; } catch { data = null; }
     if (data && (typeof data['access_token'] === 'string' || typeof data['refresh_token'] === 'string')) {
-      if (typeof data['access_token'] === 'string') setAccessCookie(res, data['access_token'] as string, Number(data['expires_in'] ?? 900));
-      if (typeof data['refresh_token'] === 'string') setRefreshCookie(res, data['refresh_token'] as string, 60 * 60 * 24);
+      if (typeof data['access_token'] === 'string') setAccessCookie(res, data['access_token'] as string, Number(data['expires_in'] ?? 900), secure);
+      if (typeof data['refresh_token'] === 'string') setRefreshCookie(res, data['refresh_token'] as string, 60 * 60 * 24, secure);
       // CSRF: cookie legible por JS (doble envío).
-      setCsrfCookie(res, randomUUID(), Number(data['expires_in'] ?? 900));
+      setCsrfCookie(res, randomUUID(), Number(data['expires_in'] ?? 900), secure);
       const { access_token, refresh_token, ...rest } = data;
       res.status(upstream.status);
       forwardHeaders(upstream, res);
@@ -171,7 +179,7 @@ apiProxy.use(async (req: Request, res: Response) => {
   }
 
   if (isLogout) {
-    clearCookies(res);
+    clearCookies(res, secure);
   }
 
   const text = await upstream.text();
