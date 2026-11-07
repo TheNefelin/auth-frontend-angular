@@ -9,7 +9,8 @@
     (mismo origen -> 'self'); el BFF reenvía a la API. Por eso ya no se
     necesitan las entradas a localhost:8000 ni ws/wss.
     Google Identity Services requiere script-src/frame-src de accounts.google.com.
-    Pendiente (producción): endurecer con hashes/nonces y quitar unsafe-inline/eval.
+    En producción, el servidor envía una cabecera CSP restrictiva con nonces
+    (script-src sin unsafe-inline/eval) que tiene prioridad sobre este meta.
   -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' https: data:; frame-src https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self';">
   <meta name="viewport" content="width=device-width, initial-scale=1">

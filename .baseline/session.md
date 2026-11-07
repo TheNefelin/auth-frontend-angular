@@ -9,9 +9,10 @@ Fase 2 del BFF: sesión en cookies HttpOnly completada. Tokens fuera del navegad
 
 ## Último avance comprobado
 
-- **Fase 2 (HttpOnly + CSRF)**: `api-proxy.ts` guarda tokens en cookies `HttpOnly; SameSite=Lax`
-  y emite `csrf_token` (legible) para doble envío; verifica `X-CSRF-Token` en
-  peticiones mutantes; refresca en el servidor ante un 401; logout borra todo.
+- **CSP con nonces (producción)**: `csp.ts` genera nonce por request, fija cabecera
+  CSP restrictiva (script-src sin unsafe-inline/eval) e inyecta nonces en scripts
+  inline del HTML. `Cache-Control: no-store` evita cacheo de nonces.
+  Verificado: 0 violaciones CSP en navegador, flujo completo OK.
 - `csrfInterceptor` lee la cookie y envía `X-CSRF-Token` en mutaciones.
 - `AuthStoreService` ya no toca `localStorage` (solo flag `hasSession`).
 - `AuthService` devuelve `void`; `auth-interceptor` + `auth-context` eliminados.
