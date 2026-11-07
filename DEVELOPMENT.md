@@ -91,7 +91,7 @@ frontend-python/
 - [ ] `pnpm lint` (no existe; solo `ng build` + tests).
 - [ ] Limpiar `ApiService` (métodos muertos) y `message-error-component` (`text-white`).
 - [x] Fase 2 del BFF: sesión en cookies `HttpOnly`; tokens fuera del navegador; `auth-interceptor` retirado; `SameSite=Lax` (CSRF de doble envío pendiente).
-- [ ] CSRF de doble envío (cookie legible + cabecera `X-CSRF-Token`).
+- [x] CSRF de doble envío: cookie legible `csrf_token` + cabecera `X-CSRF-Token` verificada por el BFF.
 
 ---
 
