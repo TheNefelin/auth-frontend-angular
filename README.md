@@ -1,4 +1,4 @@
-# frontend-angular — Sistema de Autenticación (Angular)
+# auth-frontend-angular — Sistema de Autenticación (Angular)
 
 Frontend Angular 22+ (signal-based) para autenticación transversal.
 Se conecta con el backend FastAPI vía BFF (proxy `/ssr-api` en Express).
@@ -18,7 +18,7 @@ Se conecta con el backend FastAPI vía BFF (proxy `/ssr-api` en Express).
 
 ```bash
 # 1. Clonar repositorio y entrar al proyecto
-cd frontend-angular
+cd auth-frontend-angular
 
 # 2. Instalar Node.js (v22+) y pnpm
 #    Verifica con: node -v && pnpm -v
@@ -53,7 +53,7 @@ pnpm ng serve
 # Abre http://localhost:4200/
 ```
 
-> **Regla**: `install`, `build` y `test` se ejecutan **dentro de `frontend-angular/`**, nunca en la raíz del workspace.
+> **Regla**: `install`, `build` y `test` se ejecutan **dentro de `auth-frontend-angular/`**, nunca en la raíz del workspace.
 
 ## Development server
 
