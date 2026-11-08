@@ -5,32 +5,25 @@
 
 ## Tarea activa
 
-Fase 2 del BFF: sesión en cookies HttpOnly completada. Tokens fuera del navegador.
+Proyecto completo para MVP. Fase 1 (BFF) + Fase 2 (HttpOnly + CSRF) + CSP con nonces + logging. Todo commiteado.
 
 ## Último avance comprobado
 
-- **CSP con nonces (producción)**: `csp.ts` genera nonce por request, fija cabecera
-  CSP restrictiva (script-src sin unsafe-inline/eval) e inyecta nonces en scripts
-  inline del HTML. `Cache-Control: no-store` evita cacheo de nonces.
-  Verificado: 0 violaciones CSP en navegador, flujo completo OK.
-- `csrfInterceptor` lee la cookie y envía `X-CSRF-Token` en mutaciones.
-- `AuthStoreService` ya no toca `localStorage` (solo flag `hasSession`).
-- `AuthService` devuelve `void`; `auth-interceptor` + `auth-context` eliminados.
-- `authGuard` asíncrono (pregunta `/auth/me`); `error-interceptor` gestiona la
-  sesión muerta (401 con sesión activa → limpiar + redirect).
-- Verificado en navegador: register → `/home` sin tokens en `localStorage`, cookies
-  no visibles a JS, refresh persiste tras recargar, 0 errores de consola.
-- Verificado por curl: refresh-on-401 del BFF (200 con cookie nueva), logout
-  borra cookies, 401 después.
-- `ng build` OK, `ng test` **9/9** (guard async), `pytest` **50/50**.
+- **BFF**: `/ssr-api` → FastAPI con `X-API-Key`; URL y clave ocultas del navegador.
+- **HttpOnly**: tokens en cookies `HttpOnly; SameSite=Lax`; BFF gestiona sesión y refresh.
+- **CSRF**: doble envío (`csrf_token` cookie + `X-CSRF-Token` header).
+- **CSP con nonces**: `script-src` sin `unsafe-inline`/`unsafe-eval` en producción.
+- **Logging**: errores no silenciados en producción.
+- **Verificado**: `ng build` OK, `ng test` **9/9**, 0 CSP violations en navegador.
+- Tokens no en `localStorage`; cookies no visibles a JS.
 
 ## Pendientes
 
-- Endurecer CSP para producción (hashes/nonces, quitar unsafe-inline/eval).
-- CSRF de doble envío (hoy solo SameSite=Lax).
-- GitHub / Apple (stubs), `/auth/connect`, verificación de email.
-- `docs/auth-flow.md` §9 tiene el roadmap completo.
+- GitHub / Apple (stubs), `/auth/connect`, verificación de email, MFA.
+- Endurecer `style-src` (riesgo bajo, aceptado por la industria).
+- Alertas de seguridad (hoy solo logs a stdout).
+- Pentesting (plan guardado en conversación).
 
 ## Nota
 
-Prueba funcional pendiente del usuario: login Google y local por `/ssr-api`.
+Proyecto listo para MVP. Login Google y login clásico funcionan end-to-end.
