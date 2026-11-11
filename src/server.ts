@@ -68,10 +68,6 @@ app.use(async (req, res, next) => {
       // Evitar que el navegador cachee el HTML: cada request genera un nonce nuevo.
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
-      // Asegurar que el CSP con nonce se mantiene (no sobrescrito por Angular).
-      if (isProd && nonce) {
-        res.setHeader('Content-Security-Policy', buildCsp(nonce));
-      }
       res.send(modified);
     } else {
       await writeResponseToNodeResponse(response, res);

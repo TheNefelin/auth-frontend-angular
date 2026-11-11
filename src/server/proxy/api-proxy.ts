@@ -1,46 +1,42 @@
-import { randomUUID } from 'node:crypto';
-import { Router, type Request, type Response } from 'express';
-import { serverConfig } from '@server/config';
-import { environment } from '@environments/environment';
-
 /**
- * Proxy del BFF: reenvía `/ssr-api/*` a la API FastAPI añadiendo `X-API-Key`.
+ * Proxy inverso del BFF: reenvía `/ssr-api/*` a la API FastAPI.
  *
- * Fase 2 + CSRF: el BFF es el dueño de la sesión.
+ * Fase 2 + Cross-Site Request Forgery (CSRF): el BFF es el dueño de la sesión.
  *   - Lee la cookie `access_token` y pone el `Authorization: Bearer`.
  *   - En login/register/google/refresh: extrae los tokens de la respuesta,
  *     los guarda en cookies HttpOnly y devuelve la respuesta SIN tokens.
- *     Además emite una cookie `csrf_token` legible (doble envío).
+ *     Además emite una cookie `csrf_token` legible por JS (doble envío).
  *   - En 401: intenta refrescar con `refresh_token` y reintenta una vez.
  *   - En logout: borra las cookies.
- *   - CSRF: en peticiones mutantes (POST/PUT/DELETE/PATCH) comprueba que la
- *     cabecera `X-CSRF-Token` coincida con la cookie `csrf_token`.
+ *   - CSRF (`middleware/csrf.ts`): en peticiones mutantes comprueba la
+ *     cabecera `X-CSRF-Token` contra la cookie `csrf_token`.
  *
  * El navegador nunca ve un token.
  */
+import { Router, type Request, type Response } from 'express';
+import { serverConfig } from '@server/config';
+import { environment } from '@environments/environment';
+import { parseCookies } from '@server/http/cookies';
+import { SKIP_HEADERS, forwardHeaders } from '@server/http/proxy-headers';
+import { csrfGuard } from '@server/middleware/csrf';
+import {
+  ACCESS_TOKEN_TTL_SEC,
+  clearSessionCookies,
+  emitSessionCookies,
+  refreshSession,
+} from '@server/services/session.service';
+
 export const apiProxy = Router();
 
 const apiPrefix = environment.apiUrl;
 const apiUrl = serverConfig.apiUrl;
 const apiKey = serverConfig.apiKey;
 
-const SKIP_HEADERS = new Set([
-  'host',
-  'connection',
-  'content-length',
-  'transfer-encoding',
-  'content-encoding',
-  'set-cookie',
-  'cookie',
-  'x-csrf-token',
-]);
-
 const AUTH_TOKEN_ENDPOINTS = /^\/auth\/(login|register|google|refresh)(\?|$)/;
 const LOGOUT_ENDPOINT = /^\/auth\/logout(\?|$)/;
-const MUTATING_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH']);
 
-// Secure solo en producción real (HTTPS). En localhost (dev) no se pone,
-// porque las cookies Secure no se envían por HTTP y la sesión se perdería.
+// Secure solo en producción real (HTTPS). En localhost (dev) no se pone:
+// las cookies Secure no se envían por HTTP y la sesión se perdería.
 function isSecureRequest(req: Request): boolean {
   if (process.env['PRODUCTION'] !== 'true') return false;
   const host = (req.headers.host || '').toLowerCase();
@@ -48,51 +44,8 @@ function isSecureRequest(req: Request): boolean {
   return true;
 }
 
-function parseCookies(header: string | undefined): Record<string, string> {
-  const out: Record<string, string> = {};
-  if (!header) return out;
-  for (const part of header.split(';')) {
-    const idx = part.indexOf('=');
-    if (idx < 0) continue;
-    const key = part.slice(0, idx).trim();
-    const value = part.slice(idx + 1).trim();
-    if (key) out[key] = decodeURIComponent(value);
-  }
-  return out;
-}
-
-function cookieOpts(maxAge: number, httpOnly: boolean, secure: boolean): string {
-  const parts = [`Path=/`, `SameSite=Lax`, `Max-Age=${maxAge}`];
-  if (httpOnly) parts.push('HttpOnly');
-  if (secure) parts.push('Secure');
-  return parts.join('; ');
-}
-
-function setAccessCookie(res: Response, value: string, maxAgeSec: number, secure: boolean): void {
-  res.append('Set-Cookie', `access_token=${encodeURIComponent(value)}; ${cookieOpts(maxAgeSec, true, secure)}`);
-}
-
-function setRefreshCookie(res: Response, value: string, maxAgeSec: number, secure: boolean): void {
-  res.append('Set-Cookie', `refresh_token=${encodeURIComponent(value)}; ${cookieOpts(maxAgeSec, true, secure)}`);
-}
-
-// Cookie legible por JS (NO HttpOnly): el cliente la lee y la reenvía como
-// cabecera X-CSRF-Token en peticiones mutantes (doble envío).
-function setCsrfCookie(res: Response, value: string, maxAgeSec: number, secure: boolean): void {
-  res.append('Set-Cookie', `csrf_token=${value}; ${cookieOpts(maxAgeSec, false, secure)}`);
-}
-
-function clearCookies(res: Response, secure: boolean): void {
-  res.append('Set-Cookie', `access_token=; ${cookieOpts(0, true, secure)}`);
-  res.append('Set-Cookie', `refresh_token=; ${cookieOpts(0, true, secure)}`);
-  res.append('Set-Cookie', `csrf_token=; ${cookieOpts(0, false, secure)}`);
-}
-
-function forwardHeaders(upstream: globalThis.Response, res: Response): void {
-  upstream.headers.forEach((value, key) => {
-    if (!SKIP_HEADERS.has(key.toLowerCase())) res.setHeader(key, value);
-  });
-}
+// Guarda de Cross-Site Request Forgery en peticiones mutantes.
+apiProxy.use(csrfGuard);
 
 apiProxy.use(async (req: Request, res: Response) => {
   const path = req.originalUrl.slice(apiPrefix.length);
@@ -100,21 +53,6 @@ apiProxy.use(async (req: Request, res: Response) => {
   const cookies = parseCookies(req.headers.cookie);
   const method = req.method.toUpperCase();
   const secure = isSecureRequest(req);
-
-  // --- CSRF: doble envío en peticiones mutantes con sesión activa ---
-  if (MUTATING_METHODS.has(method) && cookies['csrf_token']) {
-    const header = req.headers['x-csrf-token'];
-    const headerValue = Array.isArray(header) ? header[0] : header;
-    if (!headerValue || headerValue !== cookies['csrf_token']) {
-      res.status(403).json({
-        type: 'csrf-failed',
-        title: 'CSRF token mismatch.',
-        status: 403,
-        detail: 'Token CSRF inválido o ausente.',
-      });
-      return;
-    }
-  }
 
   const headers = new Headers();
   for (const [key, value] of Object.entries(req.headers)) {
@@ -133,27 +71,46 @@ apiProxy.use(async (req: Request, res: Response) => {
   const hasBody = req.body !== undefined && !['GET', 'HEAD'].includes(method);
   const body = hasBody ? JSON.stringify(req.body) : undefined;
 
-  let upstream = await fetch(targetUrl, { method: req.method, headers, body });
+  let upstream: globalThis.Response;
+  try {
+    upstream = await fetch(targetUrl, { method: req.method, headers, body });
+  } catch {
+    // El backend no responde: JSON de error uniforme, nunca HTML del error handler.
+    res.status(502).json({
+      type: 'upstream-unavailable',
+      title: 'Upstream Service Unavailable.',
+      status: 502,
+      detail: 'No se pudo contactar la API.',
+    });
+    return;
+  }
 
   const isTokenEndpoint = AUTH_TOKEN_ENDPOINTS.test(path);
   const isLogout = LOGOUT_ENDPOINT.test(path);
 
   if (upstream.status === 401 && cookies['refresh_token'] && !isTokenEndpoint && !isLogout) {
-    const refreshRes = await fetch(`${apiUrl}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
-      body: JSON.stringify({ refresh_token: cookies['refresh_token'] }),
-    });
-    if (refreshRes.ok) {
-      const rd = await refreshRes.json() as Record<string, unknown>;
-      if (typeof rd['access_token'] === 'string') setAccessCookie(res, rd['access_token'] as string, Number(rd['expires_in'] ?? 900), secure);
-      if (typeof rd['refresh_token'] === 'string') setRefreshCookie(res, rd['refresh_token'] as string, 60 * 60 * 24, secure);
-      // Regenera el CSRF junto al access token.
-      setCsrfCookie(res, randomUUID(), Number(rd['expires_in'] ?? 900), secure);
-      headers.set('Authorization', `Bearer ${rd['access_token']}`);
-      upstream = await fetch(targetUrl, { method: req.method, headers, body });
+    const refreshed = await refreshSession(cookies['refresh_token']);
+
+    if (refreshed?.accessToken) {
+      emitSessionCookies(res, {
+        access_token: refreshed.accessToken,
+        refresh_token: refreshed.refreshToken,
+        expires_in: refreshed.expiresIn ?? ACCESS_TOKEN_TTL_SEC,
+      }, secure);
+      headers.set('Authorization', `Bearer ${refreshed.accessToken}`);
+      try {
+        upstream = await fetch(targetUrl, { method: req.method, headers, body });
+      } catch {
+        res.status(502).json({
+          type: 'upstream-unavailable',
+          title: 'Upstream Service Unavailable.',
+          status: 502,
+          detail: 'No se pudo contactar la API tras refrescar la sesión.',
+        });
+        return;
+      }
     } else {
-      clearCookies(res, secure);
+      clearSessionCookies(res, secure);
     }
   }
 
@@ -161,17 +118,17 @@ apiProxy.use(async (req: Request, res: Response) => {
     const text = await upstream.text();
     let data: Record<string, unknown> | null = null;
     try { data = JSON.parse(text) as Record<string, unknown>; } catch { data = null; }
+
     if (data && (typeof data['access_token'] === 'string' || typeof data['refresh_token'] === 'string')) {
-      if (typeof data['access_token'] === 'string') setAccessCookie(res, data['access_token'] as string, Number(data['expires_in'] ?? 900), secure);
-      if (typeof data['refresh_token'] === 'string') setRefreshCookie(res, data['refresh_token'] as string, 60 * 60 * 24, secure);
-      // CSRF: cookie legible por JS (doble envío).
-      setCsrfCookie(res, randomUUID(), Number(data['expires_in'] ?? 900), secure);
-      const { access_token, refresh_token, ...rest } = data;
+      emitSessionCookies(res, data, secure);
+      // La respuesta al cliente sale SIN tokens: solo datos de negocio.
+      const { access_token: _a, refresh_token: _r, ...rest } = data;
       res.status(upstream.status);
       forwardHeaders(upstream, res);
       res.send(JSON.stringify(rest));
       return;
     }
+
     res.status(upstream.status);
     forwardHeaders(upstream, res);
     res.send(text);
@@ -179,7 +136,7 @@ apiProxy.use(async (req: Request, res: Response) => {
   }
 
   if (isLogout) {
-    clearCookies(res, secure);
+    clearSessionCookies(res, secure);
   }
 
   const text = await upstream.text();

@@ -5,25 +5,31 @@
 
 ## Tarea activa
 
-Proyecto completo para MVP. Fase 1 (BFF) + Fase 2 (HttpOnly + CSRF) + CSP con nonces + logging. Todo commiteado.
+Refactor del BFF (`/server`): separación de responsabilidades sin cambiar contratos HTTP.
 
 ## Último avance comprobado
 
-- **BFF**: `/ssr-api` → FastAPI con `X-API-Key`; URL y clave ocultas del navegador.
-- **HttpOnly**: tokens en cookies `HttpOnly; SameSite=Lax`; BFF gestiona sesión y refresh.
-- **CSRF**: doble envío (`csrf_token` cookie + `X-CSRF-Token` header).
-- **CSP con nonces**: `script-src` sin `unsafe-inline`/`unsafe-eval` en producción.
-- **Logging**: errores no silenciados en producción.
-- **Verificado**: `ng build` OK, `ng test` **9/9**, 0 CSP violations en navegador.
-- Tokens no en `localStorage`; cookies no visibles a JS.
+- **`api-proxy.ts`** delgado (CSRF → fetch → tokens → respuesta); lógica extraída a módulos nuevos:
+  - `http/cookies.ts` (parseo + `cookieOpts` + builder)
+  - `http/proxy-headers.ts` (SKIP_HEADERS + `forwardHeaders`)
+  - `middleware/csrf.ts` (doble envío, 403 JSON)
+  - `services/session.service.ts` (emit/clear cookies, `refreshSession` con catch → sesión inválida)
+- **Upstream down → 502 JSON** `upstream-unavailable` (antes: error handler de Express).
+- Constantes de TTL centralizadas (`ACCESS_TOKEN_TTL_SEC=900`, `REFRESH_TOKEN_TTL_SEC=86400`).
+- Eliminada doble fijación del `Content-Security-Policy` en `server.ts` (Angular no emite CSP propio; cabecera HTTP prevalece).
+- Comentarios con nombres completos según convención (Cross-Site Request Forgery, Content Security Policy).
+- **Verificado**: `ng build` OK, `ng test` **9/9**.
+
+## Archivos tocados
+
+- `src/server.ts`, `src/server/proxy/api-proxy.ts`
+- Nuevos: `src/server/http/cookies.ts`, `src/server/http/proxy-headers.ts`, `src/server/middleware/csrf.ts`, `src/server/services/session.service.ts`
 
 ## Pendientes
 
-- GitHub / Apple (stubs), `/auth/connect`, verificación de email, MFA.
-- Endurecer `style-src` (riesgo bajo, aceptado por la industria).
-- Alertas de seguridad (hoy solo logs a stdout).
-- Pentesting (plan guardado en conversación).
+- Confirmar commit/push por el usuario.
+- Actualizar `DEVELOPMENT.md` (estructura `/server`) solo con autorización.
 
-## Nota
+## Siguiente paso
 
-Proyecto listo para MVP. Login Google y login clásico funcionan end-to-end.
+- MVP sigue en estado verificado; siguiente según prioridad del usuario (GitHub/Apple, `/auth/connect`, MFA, verificación de email).
