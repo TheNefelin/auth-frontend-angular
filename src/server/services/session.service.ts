@@ -19,6 +19,14 @@ import { buildSetCookie } from '@server/http/cookies';
 export const ACCESS_TOKEN_TTL_SEC = 900;
 /** TTL del refresh token (segundos): 24 h. */
 export const REFRESH_TOKEN_TTL_SEC = 60 * 60 * 24;
+/** Timeout de llamadas al upstream: un backend lento no cuelga el reintento. */
+const UPSTREAM_TIMEOUT_MS = 5000;
+
+/** Sanea un valor a TTL finito y positivo; si no es, usa el default. */
+function ttl(value: unknown, fallback: number): number {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
+}
 
 /** Estructura mínima devuelta por `/auth/refresh` y por los login-type. */
 interface SessionTokens {
@@ -29,7 +37,7 @@ interface SessionTokens {
 
 /** Emite las tres cookies de sesión (o las que traiga `data`). */
 export function emitSessionCookies(res: Response, data: Record<string, unknown>, secure: boolean): void {
-  const expiresIn = Number(data['expires_in'] ?? ACCESS_TOKEN_TTL_SEC);
+  const expiresIn = ttl(data['expires_in'], ACCESS_TOKEN_TTL_SEC);
 
   if (typeof data['access_token'] === 'string') {
     res.append('Set-Cookie', buildSetCookie('access_token', data['access_token'], expiresIn, true, secure));
@@ -61,6 +69,7 @@ export async function refreshSession(refreshToken: string): Promise<SessionToken
         'X-API-Key': serverConfig.apiKey,
       },
       body: JSON.stringify({ refresh_token: refreshToken }),
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
 
     if (!refreshRes.ok) return null;
@@ -71,7 +80,7 @@ export async function refreshSession(refreshToken: string): Promise<SessionToken
     return {
       accessToken: data['access_token'],
       refreshToken: typeof data['refresh_token'] === 'string' ? data['refresh_token'] : undefined,
-      expiresIn: Number(data['expires_in'] ?? ACCESS_TOKEN_TTL_SEC),
+      expiresIn: ttl(data['expires_in'], ACCESS_TOKEN_TTL_SEC),
     };
   } catch {
     return null;

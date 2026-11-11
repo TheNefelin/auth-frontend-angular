@@ -19,6 +19,7 @@ import { environment } from '@environments/environment';
 import { parseCookies } from '@server/http/cookies';
 import { SKIP_HEADERS, forwardHeaders } from '@server/http/proxy-headers';
 import { csrfGuard } from '@server/middleware/csrf';
+import { jsonErrorHandler } from '@server/middleware/json-error';
 import {
   ACCESS_TOKEN_TTL_SEC,
   clearSessionCookies,
@@ -144,3 +145,6 @@ apiProxy.use(async (req: Request, res: Response) => {
   forwardHeaders(upstream, res);
   res.send(text);
 });
+
+// Errores de parseo del body (express.json()) → 400 JSON, nunca HTML.
+apiProxy.use(jsonErrorHandler);

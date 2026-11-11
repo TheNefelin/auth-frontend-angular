@@ -9,21 +9,16 @@ Refactor del BFF (`/server`): separación de responsabilidades sin cambiar contr
 
 ## Último avance comprobado
 
-- **`api-proxy.ts`** delgado (CSRF → fetch → tokens → respuesta); lógica extraída a módulos nuevos:
-  - `http/cookies.ts` (parseo + `cookieOpts` + builder)
-  - `http/proxy-headers.ts` (SKIP_HEADERS + `forwardHeaders`)
-  - `middleware/csrf.ts` (doble envío, 403 JSON)
-  - `services/session.service.ts` (emit/clear cookies, `refreshSession` con catch → sesión inválida)
-- **Upstream down → 502 JSON** `upstream-unavailable` (antes: error handler de Express).
-- Constantes de TTL centralizadas (`ACCESS_TOKEN_TTL_SEC=900`, `REFRESH_TOKEN_TTL_SEC=86400`).
-- Eliminada doble fijación del `Content-Security-Policy` en `server.ts` (Angular no emite CSP propio; cabecera HTTP prevalece).
-- Comentarios con nombres completos según convención (Cross-Site Request Forgery, Content Security Policy).
-- **Verificado**: `ng build` OK, `ng test` **9/9**.
+- **Refactor del BFF** (sesión actual): `api-proxy.ts` delgado; módulos `http/cookies.ts`, `http/proxy-headers.ts`, `middleware/csrf.ts`, `middleware/json-error.ts`, `services/session.service.ts`.
+- **Endurecimiento 1–3**: `expires_in` saneado (`ttl()` finito/positivo), body JSON inválido → 400 JSON (`malformed-json`), `refreshSession` con `AbortSignal.timeout(5000)`.
+- Upstream inalcanzable → 502 JSON; sin doble Content-Security-Policy en `server.ts`.
+- **Verificado**: `ng build` OK, `ng test` **27/27**.
 
 ## Archivos tocados
 
 - `src/server.ts`, `src/server/proxy/api-proxy.ts`
-- Nuevos: `src/server/http/cookies.ts`, `src/server/http/proxy-headers.ts`, `src/server/middleware/csrf.ts`, `src/server/services/session.service.ts`
+- Nuevos: `src/server/http/` (cookies, proxy-headers), `src/server/middleware/` (csrf, json-error), `src/server/services/` (session)
+- Specs BFF: `http/cookies.spec.ts`, `middleware/csrf.spec.ts`, `middleware/json-error.spec.ts`, `services/session.service.spec.ts`
 
 ## Pendientes
 

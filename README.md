@@ -11,7 +11,7 @@ Se conecta con el backend FastAPI vía BFF (proxy `/ssr-api` en Express).
 | Estilos | Tailwind CSS + DaisyUI | En uso |
 | Estado | Signals (no `subscribe` manual en componentes) | En uso |
 | HTTP | `HttpClient` + interceptores funcionales | En uso |
-| Tests | vitest (`ng test`) | 9/9 |
+| Tests | vitest (`ng test`) | 27/27 |
 | Build | `ng build` | OK |
 
 ## Instalación
@@ -92,7 +92,7 @@ To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use th
 ng test
 ```
 
-Suite actual: **9/9** tests.
+Suite actual: **27/27** tests.
 
 ## Arquitectura BFF (seguridad)
 
@@ -105,6 +105,8 @@ Navegador → /ssr-api/* (mismo origen) → Express BFF → FastAPI (X-API-Key)
 - **Tokens**: cookies `HttpOnly` (no accesibles por JavaScript).
 - **CSRF**: doble envío (`csrf_token` cookie + `X-CSRF-Token` header).
 - **CSP**: permisivo en dev (`<meta>`), restrictivo en prod (cabecera HTTP con nonces).
+- **Errores**: upstream inalcanzable → 502 JSON; body inválido → 400 JSON (nunca HTML de errores).
+- El BFF está modularizado en `http/` (cabeceras y cookies), `middleware/` (CSP, CSRF, JSON) y `services/` (sesión/refresh).
 
 ## Seguridad
 - Las credenciales del servidor (`.env`) nunca se commitean (`.env` está en `.gitignore`).

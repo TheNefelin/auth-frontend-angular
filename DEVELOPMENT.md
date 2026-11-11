@@ -1,4 +1,4 @@
-# DEVELOPMENT.md — Mapa del proyecto frontend-python (Angular 21+)
+# DEVELOPMENT.md — Mapa del proyecto frontend-python (Angular 22)
 
 Este archivo es la memoria viva del frontend. Se actualiza solo con decisiones que sobreviven a la sesión. No es un diario.
 
@@ -6,7 +6,7 @@ Este archivo es la memoria viva del frontend. Se actualiza solo con decisiones q
 
 ## 1. Propósito
 
-Frontend de autenticación transversal con Angular 21+ (signal-based), CSR/SSR.
+Frontend de autenticación transversal con Angular 22 (signal-based), CSR/SSR.
 Se conecta con el backend FastAPI para login, Google, GitHub, Apple, refresh y logout.
 
 ---
@@ -19,7 +19,7 @@ Se conecta con el backend FastAPI para login, Google, GitHub, Apple, refresh y l
 | Styling | Tailwind CSS + DaisyUI | En uso |
 | Estado | Signals (no `subscribe` manual en componentes) | En uso |
 | HTTP | `httpResource` / `HttpClient` + interceptores funcionales | En uso |
-| Tests | vitest (`ng test`) | 20/20 |
+| Tests | vitest (`ng test`) | 27/27 |
 | Build | `ng build` | OK |
 
 ---
@@ -49,7 +49,12 @@ frontend-python/
 │   │   ├── core/           → servicios base, interceptores, guards
 │   │   └── features/       → features por dominio (auth, users, etc.)
 │   ├── server.ts            → Express SSR: monta /ssr-api y renderiza Angular
-│   ├── server/              → BFF (solo servidor): config.ts, proxy/, middleware/
+│   ├── server/              → BFF (solo servidor)
+│   │   ├── http/            → cookies, cabeceras del proxy (proxy-headers)
+│   │   ├── middleware/      → csp, csrf (doble envío), json-error
+│   │   ├── services/        → session.service (cookies/refresh de sesión)
+│   │   ├── proxy/api-proxy  → router delgado /ssr-api
+│   │   └── env.ts / config.ts
 │   ├── index.html
 │   ├── main.ts
 │   └── styles.css
@@ -78,6 +83,7 @@ frontend-python/
 | `error-interceptor`: silencia 401 solo en peticiones autenticadas | Un 401 de login (sin Bearer) sí se muestra | Aceptado |
 | `authGuard` de sesión (presencia, sin red) en `/home` | Ruta privada; el rol se resolverá en guard async aparte | Aceptado |
 | `/home` en `RenderMode.Client` (SSR no ve localStorage) | Evita redirección falsa en prerender | Aceptado |
+| BFF modular: `http/`, `middleware/`, `services/`; router delgado; upstream caído → 502 JSON | Mantenibilidad, contratos uniformes, error nunca HTML | Aceptado |
 
 ---
 
