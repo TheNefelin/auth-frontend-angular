@@ -134,6 +134,18 @@ src/server/
 - `config.ts` es puro: solo lee `process.env` + `required()`.
 - El prefijo `/ssr-api` viene de `environment.apiUrl` (fuente única, no hardcodeado).
 
+### [SSR] — Sesión en cookie HttpOnly (BFF)
+
+Cuando el BFF es dueño de la sesión (tokens en cookies `HttpOnly`), el cliente **no puede** leer ni guardar tokens. Consecuencias:
+
+- **No hay `authInterceptor`**: el BFF pone el `Authorization: Bearer` leyendo la cookie `access_token`. El cliente solo envía las cookies (mismo origen).
+- **CSRF por doble envío**: el BFF emite una cookie legible `csrf_token`; el cliente la copia a la cabecera `X-CSRF-Token` en peticiones mutantes. El BFF compara ambas.
+- **Guard asíncrono**: como el cliente no sabe si hay sesión, el guard protege la ruta preguntando `/auth/me` (y redirige a login si falla). No vale una comprobación de "presencia" sin red.
+- **Respuesta de login sin tokens**: el BFF extrae `access_token`/`refresh_token` de la respuesta del backend, los guarda en cookies y devuelve al cliente solo los datos de negocio.
+- **Refresh silencioso en el proxy**: ante un 401, el BFF llama a `/auth/refresh` con la cookie `refresh_token`, emite las cookies nuevas y reintenta la petición original; si falla, borra la sesión.
+
+El `AuthStoreService` del cliente queda reducido a un flag booleano (solo para reaccionar en la UI); la fuente de verdad es el servidor (`/auth/me`).
+
 ### allowedHosts (Angular 22)
 
 Angular 22 valida el header `Host` y responde 400 a los no declarados. Configurar en `angular.json`:
@@ -143,23 +155,6 @@ Angular 22 valida el header `Host` y responde 400 a los no declarados. Configura
 O vía env: `NG_ALLOWED_HOSTS=localhost,tu-dominio.com`.
 
 ## [SSR] — Auth multi-tenant (por namespace)
-
-```text
-GET /ssr-api/config                    → { googleClientIds } (mapa por namespace)
-POST /ssr-api/{namespace}/auth/google  → login con el client ID de ese namespace
-GET/POST/DELETE /ssr-api/{namespace}/{resource}  → CRUD con Bearer del namespace
-```
-
-- **Sesión**: `sessionStorage` con prefijo `auth.{namespace}.access_token/refresh_token/user` — sobrevive a F5, muere al cerrar la pestaña.
-- **Seguridad (XSS)**: `sessionStorage`/`localStorage` **no** aíslan los tokens de JavaScript del propio origen: un XSS puede robarlos. Para producción, preferir un **BFF con cookie `HttpOnly` + `Secure` + `SameSite`** para el refresh token (esta app ya tiene BFF `/ssr-api`). Si se mantiene el token en storage, asumir el riesgo y reforzar CSP + sanitización; nunca presentar `sessionStorage` como frontera de seguridad.
-- **`sessionSignal(ns)`** reactivo por namespace: `login()`/`logout()` lo actualizan → el UI se desloguea solo cuando el interceptor fuerza logout.
-- **authInterceptor**: extrae ns de la URL, añade `Authorization: Bearer`, hace refresh+retry en 401. Si el refresh falla → `logout(ns)` (limpia sesión + signal).
-- **Client ID por app**: el BFF expone el mapa y el AuthService lo cachea; lanza error claro si no está configurado.
-
-## [SSR] — No escribir signals durante el render
-
-- **Nunca escribir signals en el constructor ni durante el render**: en SSR el orden de inicialización no es el del navegador y el estado queda inconsistente entre servidor y cliente. Usar `effect()` para reacciones y `afterNextRender`/`afterRenderEffect` para lo que depende del DOM.
-- Las escrituras que sí son seguras van en manejadores de eventos o en `effect()`, nunca en el cuerpo del constructor.
 
 ```text
 GET /ssr-api/config                    → { googleClientIds } (mapa por namespace)
