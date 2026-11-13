@@ -1,4 +1,4 @@
-# SKILL.md — frontend-python (Angular 21+)
+# SKILL.md — auth-frontend-angular (Angular 22)
 
 > Guía de referencia para el stack del frontend. Leelas antes de tocar código.
 > El skill completo está en `.baseline/skills/angular/SKILL.md`.
@@ -23,7 +23,7 @@
 
 ## Notas
 
-- Este proyecto es el frontend Angular 21+ (signal-based) del sistema de autenticación.
-- El usuario trabajará primero en Angular. El agente no modifica código sin autorización explícita.
+- Este proyecto es el frontend Angular 22 (signal-based) del sistema de autenticación.
+- El agente no modifica código sin autorización explícita del usuario.
 - Lee `.baseline/skills/angular/SKILL.md` para replicar el patrón senior.
 - **Prohibido por ser legacy**: `NgModule`, `*ngIf`/`*ngFor`/`*ngSwitch`, decoradores `@Input`/`@Output`/`@ViewChild`, `ChangeDetectorRef.detectChanges()` manual.

@@ -6,15 +6,17 @@
 > Instalado con agent-baseline 0.2.2. No edites este bloque: edita `.baseline/AGENTS.md`.
 <!-- agent-baseline:end -->
 
-# AGENTS.md — frontend-python (Angular 21+)
+# AGENTS.md — auth-frontend-angular (Angular 22)
 
 ## Stack
 
 | Capa | Tecnología | Estado |
 |------|-----------|--------|
-| Frontend | Angular 21+ (signal-based) | Existente (proyecto creado) |
-| Styling | Tailwind CSS + DaisyUI | Por definir |
-| Tests | vitest | Por definir |
+| Frontend | Angular 22 (signal-based) | En uso |
+| Styling | Tailwind CSS 4 + DaisyUI 5 | En uso |
+| BFF | Express 5 (SSR, sesión en cookies `HttpOnly`) | En uso |
+| Estado | Signals (sin `subscribe` manual en componentes) | En uso |
+| Tests | vitest | 27/27 |
 
 ## 0. Rol
 
@@ -27,7 +29,7 @@ Español neutro con "tú" o impersonal. Sin voseo ni modismos regionales.
 ## 6. Contexto
 
 - Antes de tocar un área, lee su memoria: `DEVELOPMENT.md`, luego `README.md` y el `SKILL.md` del proyecto.
-- `install`, `build` y `test` se ejecutan **dentro de `frontend-python/`**, nunca en la raíz.
+- `install`, `build` y `test` se ejecutan **dentro de `auth-frontend-angular/`**, nunca en la raíz.
 - **El usuario trabajará primero en Angular.** El agente no modifica código sin autorización explícita.
 
 ## 11. Memoria

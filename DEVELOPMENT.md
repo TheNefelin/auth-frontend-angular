@@ -1,4 +1,4 @@
-# DEVELOPMENT.md — Mapa del proyecto frontend-python (Angular 22)
+# DEVELOPMENT.md — Mapa del proyecto auth-frontend-angular (Angular 22)
 
 Este archivo es la memoria viva del frontend. Se actualiza solo con decisiones que sobreviven a la sesión. No es un diario.
 
@@ -15,10 +15,11 @@ Se conecta con el backend FastAPI para login, Google, GitHub, Apple, refresh y l
 
 | Capa | Tecnología | Estado |
 |------|-----------|--------|
-| Framework | Angular 22 (signal-based) | Existente |
+| Framework | Angular 22 (signal-based) | En uso |
 | Styling | Tailwind CSS + DaisyUI | En uso |
 | Estado | Signals (no `subscribe` manual en componentes) | En uso |
-| HTTP | `httpResource` / `HttpClient` + interceptores funcionales | En uso |
+| HTTP | `rxResource` / `HttpClient` + interceptores funcionales | En uso |
+| BFF | Express 5 (SSR, cookies `HttpOnly`, CSRF, CSP) | En uso |
 | Tests | vitest (`ng test`) | 27/27 |
 | Build | `ng build` | OK |
 
@@ -27,14 +28,14 @@ Se conecta con el backend FastAPI para login, Google, GitHub, Apple, refresh y l
 ## 3. Estructura de carpetas (existente)
 
 ```
-frontend-python/
+auth-frontend-angular/
 ├── DEVELOPMENT.md          ← este archivo
 ├── AGENTS.md               ← reglas de operación
 ├── SKILL.md                ← reglas del stack Angular
 ├── .baseline/              → baseline propio
 │   ├── AGENTS.md
 │   ├── session.md
-│   └── skills/angular
+│   └── skills/angular, memoria
 ├── .env                    → secretos del servidor (fuera de Git)
 ├── .env.demo               → plantilla versionada
 ├── package.json
@@ -46,8 +47,9 @@ frontend-python/
 │   │   ├── app.ts
 │   │   ├── app.html
 │   │   ├── app.routes.ts
-│   │   ├── core/           → servicios base, interceptores, guards
-│   │   └── features/       → features por dominio (auth, users, etc.)
+│   │   ├── core/           → servicios base, interceptores, guards, modelos
+│   │   ├── features/       → features por dominio (auth, home, not-found)
+│   │   └── shared/         → componentes compartidos y constantes de ruta
 │   ├── server.ts            → Express SSR: monta /ssr-api y renderiza Angular
 │   ├── server/              → BFF (solo servidor)
 │   │   ├── http/            → cookies, cabeceras del proxy (proxy-headers)
@@ -55,6 +57,7 @@ frontend-python/
 │   │   ├── services/        → session.service (cookies/refresh de sesión)
 │   │   ├── proxy/api-proxy  → router delgado /ssr-api
 │   │   └── env.ts / config.ts
+│   ├── environments/        → environment.ts (apiUrl, googleClientId)
 │   ├── index.html
 │   ├── main.ts
 │   └── styles.css
@@ -79,10 +82,11 @@ frontend-python/
 | `AuthService` solo HTTP; nunca navega ni toca el store | Datos ≠ UI; el flujo vive en página/interceptor | Aceptado |
 | URL base del cliente: `environment.apiUrl = '/ssr-api'` (mismo origen) | Sin hardcode; el BFF oculta la URL real y la API Key | Aceptado |
 | BFF: `src/server/config.ts` carga `.env` con `process.loadEnvFile` (el entorno real manda) | `ng serve` no pasa `--env-file`; cero dependencias | Aceptado |
-| `auth-interceptor`: criterio "llevaba Bearer" (sin lista de URLs); refresh vía `AuthService.refresh` (HttpContext SKIP) | Interceptor delgado, sin rutas de negocio ni ciclos | Aceptado |
-| `error-interceptor`: silencia 401 solo en peticiones autenticadas | Un 401 de login (sin Bearer) sí se muestra | Aceptado |
-| `authGuard` de sesión (presencia, sin red) en `/home` | Ruta privada; el rol se resolverá en guard async aparte | Aceptado |
-| `/home` en `RenderMode.Client` (SSR no ve localStorage) | Evita redirección falsa en prerender | Aceptado |
+| `auth-interceptor` retirado (Fase 2) | El BFF gestiona la sesión (cookies `HttpOnly`) y refresca ante un 401; el cliente no toca tokens | Aceptado |
+| `csrf-interceptor` añade `X-CSRF-Token` en peticiones mutantes | El BFF compara cabecera vs cookie `csrf_token` (doble envío) | Aceptado |
+| `error-interceptor`: silencia 401 solo en peticiones autenticadas | Un 401 de login (sin sesión) sí se muestra | Aceptado |
+| `authGuard` asíncrono en `/home` | El cliente no puede leer la cookie `HttpOnly`: la guardia pregunta `/auth/me`. El rol se resolverá en guard async aparte | Aceptado |
+| `/home` en `RenderMode.Client` (la sesión vive en cookies `HttpOnly` y el guard es async) | Evita redirección falsa en prerender | Aceptado |
 | BFF modular: `http/`, `middleware/`, `services/`; router delgado; upstream caído → 502 JSON | Mantenibilidad, contratos uniformes, error nunca HTML | Aceptado |
 
 ---
@@ -95,7 +99,8 @@ frontend-python/
 - [ ] Tests de integración con backend (hoy solo unitarios).
 - [ ] MFA/2FA en frontend (código TOTP).
 - [ ] `pnpm lint` (no existe; solo `ng build` + tests).
-- [ ] Limpiar `ApiService` (métodos muertos) y `message-error-component` (`text-white`).
+- [ ] Limpiar `ApiService` (métodos muertos: `getById`, `update`, `delete`) y `message-error-component` (`text-white`).
+- [ ] El docstring de `auth-guard.ts` sigue describiendo la Fase 1 (presencia de sesión sin red, `authInterceptor`); el código ya es async contra `/auth/me`.
 - [x] Fase 2 del BFF: sesión en cookies `HttpOnly`; tokens fuera del navegador; `auth-interceptor` retirado; `SameSite=Lax` (CSRF de doble envío pendiente).
 - [x] CSRF de doble envío: cookie legible `csrf_token` + cabecera `X-CSRF-Token` verificada por el BFF.
 

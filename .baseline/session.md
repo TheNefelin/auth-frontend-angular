@@ -1,4 +1,4 @@
-# Sesión — frontend-python
+# Sesión — auth-frontend-angular
 
 > Checkpoint local (fuera de Git): el punto de continuación de la tarea en curso, no un diario.
 > Mantenlo corto (≤ ~40 líneas) y reemplaza su contenido en vez de acumular. Sin transcripciones ni secretos.
@@ -22,8 +22,8 @@ Refactor del BFF (`/server`): separación de responsabilidades sin cambiar contr
 
 ## Pendientes
 
-- Confirmar commit/push por el usuario.
-- Actualizar `DEVELOPMENT.md` (estructura `/server`) solo con autorización.
+- Actualizar `DEVELOPMENT.md` (estructura `/server` y estado del guard): ✅ hecho en la última sesión.
+- Pendientes de producto: GitHub/Apple, `/auth/connect`, MFA/2FA, verificación de email.
 
 ## Siguiente paso
 
