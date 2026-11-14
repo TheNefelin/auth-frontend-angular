@@ -12,11 +12,14 @@ import '@server/env';
 import { apiProxy } from '@server/proxy/api-proxy';
 import { environment } from '@environments/environment';
 import { generateNonce, buildCsp, injectNonce } from '@server/middleware/csp';
+import { getAllowedHosts } from '@server/middleware/allowed-hosts';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
+const angularApp = new AngularNodeAppEngine({
+  allowedHosts: getAllowedHosts(),
+});
 
 const isProd = process.env['PRODUCTION'] === 'true';
 
