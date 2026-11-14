@@ -6,7 +6,9 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
-// [BFF] nuestro: prepara el entorno, CSP con nonce y monta el proxy (no son del scaffold).
+
+// [BFF] ── Inicio del código propio ─────────────────────────────────────────
+// nuestro: prepara el entorno, CSP con nonce y monta el proxy (no son del scaffold).
 // `env` va PRIMERO: deja process.env listo antes de que config lo lea.
 import '@server/env';
 import { apiProxy } from '@server/proxy/api-proxy';
@@ -14,6 +16,7 @@ import { authProxy } from '@server/proxy/auth-proxy';
 import { environment } from '@environments/environment';
 import { generateNonce, buildCsp, injectNonce } from '@server/middleware/csp';
 import { getAllowedHosts } from '@server/middleware/allowed-hosts';
+// [BFF] ── Fin del código propio ────────────────────────────────────────────
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
@@ -48,9 +51,10 @@ app.use(
 
 /**
  * Handle all other requests by rendering the Angular application.
- * En producción: genera nonce, fija CSP, inyecta nonce en scripts inline.
  */
 app.use(async (req, res, next) => {
+  // [BFF] ── Inicio del código propio ─────────────────────────────────────────
+  // En producción: genera nonce, fija CSP, inyecta nonce en scripts inline.
   const nonce = isProd ? generateNonce() : undefined;
 
   if (isProd && nonce) {
@@ -82,6 +86,7 @@ app.use(async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+  // [BFF] ── Fin del código propio ────────────────────────────────────────────
 });
 
 /**
