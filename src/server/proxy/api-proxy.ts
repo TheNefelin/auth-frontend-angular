@@ -1,18 +1,21 @@
 /**
- * Proxy inverso del BFF: reenvía `/ssr-api/*` a la API FastAPI.
+ * Proxy genérico del BFF: reenvía `/ssr-api/*` a la API FastAPI.
  *
- * Fase 2 + Cross-Site Request Forgery (CSRF): el BFF es el dueño de la sesión.
- *   - Lee la cookie `access_token` y pone el `Authorization: Bearer`.
- *   - En login/register/google/refresh: extrae los tokens de la respuesta,
- *     los guarda en cookies HttpOnly y devuelve la respuesta SIN tokens.
- *     Además emite una cookie `csrf_token` legible por JS (doble envío).
- *   - En 401: intenta refrescar con `refresh_token` y reintenta una vez.
- *   - En logout: borra las cookies.
+ * NO gestiona cookies de sesión ni tokens: esa responsabilidad vive en
+ * `auth-proxy.ts` (montado antes en `/ssr-api/auth`). Este router es el
+ * catch-all para endpoints CRUD/genéricos (language, project, technology,
+ * url, url_grp, etc.) y para cualquier feature futura.
+ *
+ * Responsabilidades:
+ *   - Forwarding con `Authorization: Bearer` desde la cookie `access_token`.
+ *   - En 401: intenta refrescar con `refresh_token` y reintenta una vez;
+ *     si el refresh falla, borra las cookies de sesión.
+ *   - Upstream caído → 502 JSON (nunca HTML).
+ *   - Body JSON inválido → 400 JSON (`jsonErrorHandler`).
  *   - CSRF (`middleware/csrf.ts`): en peticiones mutantes comprueba la
  *     cabecera `X-CSRF-Token` contra la cookie `csrf_token`.
- *
- * El navegador nunca ve un token.
  */
+
 import { Router, type Request, type Response } from 'express';
 import { serverConfig } from '@server/config';
 import { environment } from '@environments/environment';
@@ -21,23 +24,15 @@ import { SKIP_HEADERS, forwardHeaders } from '@server/http/proxy-headers';
 import { csrfGuard } from '@server/middleware/csrf';
 import { jsonErrorHandler } from '@server/middleware/json-error';
 import {
-  ACCESS_TOKEN_TTL_SEC,
   clearSessionCookies,
-  emitSessionCookies,
   refreshSession,
 } from '@server/services/session.service';
 
 export const apiProxy = Router();
 
-const apiPrefix = environment.apiUrl;
-const apiUrl = serverConfig.apiUrl;
-const apiKey = serverConfig.apiKey;
+const apiPrefix = environment.apiUrl;   // '/ssr-api'
 
-const AUTH_TOKEN_ENDPOINTS = /^\/auth\/(login|register|google|refresh)(\?|$)/;
-const LOGOUT_ENDPOINT = /^\/auth\/logout(\?|$)/;
-
-// Secure solo en producción real (HTTPS). En localhost (dev) no se pone:
-// las cookies Secure no se envían por HTTP y la sesión se perdería.
+// Secure solo en producción real (HTTPS).
 function isSecureRequest(req: Request): boolean {
   if (process.env['PRODUCTION'] !== 'true') return false;
   const host = (req.headers.host || '').toLowerCase();
@@ -49,6 +44,12 @@ function isSecureRequest(req: Request): boolean {
 apiProxy.use(csrfGuard);
 
 apiProxy.use(async (req: Request, res: Response) => {
+  const apiUrl = serverConfig.apiUrl;
+  const apiKey = serverConfig.apiKey;
+  if (!apiUrl || !apiKey) {
+    res.status(500).json({ detail: 'Falta configurar API_URL y API_KEY en el servidor.' });
+    return;
+  }
   const path = req.originalUrl.slice(apiPrefix.length);
   const targetUrl = `${apiUrl}${path}`;
   const cookies = parseCookies(req.headers.cookie);
@@ -76,7 +77,6 @@ apiProxy.use(async (req: Request, res: Response) => {
   try {
     upstream = await fetch(targetUrl, { method: req.method, headers, body });
   } catch {
-    // El backend no responde: JSON de error uniforme, nunca HTML del error handler.
     res.status(502).json({
       type: 'upstream-unavailable',
       title: 'Upstream Service Unavailable.',
@@ -86,17 +86,16 @@ apiProxy.use(async (req: Request, res: Response) => {
     return;
   }
 
-  const isTokenEndpoint = AUTH_TOKEN_ENDPOINTS.test(path);
-  const isLogout = LOGOUT_ENDPOINT.test(path);
-
-  if (upstream.status === 401 && cookies['refresh_token'] && !isTokenEndpoint && !isLogout) {
+  // Refresh on 401: intenta renovar la sesión y reintenta una vez.
+  if (upstream.status === 401 && cookies['refresh_token']) {
     const refreshed = await refreshSession(cookies['refresh_token']);
-
     if (refreshed?.accessToken) {
+      // Emitir cookies nuevas (el BFF es dueño de la sesión).
+      const { emitSessionCookies } = await import('@server/services/session.service');
       emitSessionCookies(res, {
         access_token: refreshed.accessToken,
         refresh_token: refreshed.refreshToken,
-        expires_in: refreshed.expiresIn ?? ACCESS_TOKEN_TTL_SEC,
+        expires_in: refreshed.expiresIn ?? 900,
       }, secure);
       headers.set('Authorization', `Bearer ${refreshed.accessToken}`);
       try {
@@ -111,33 +110,9 @@ apiProxy.use(async (req: Request, res: Response) => {
         return;
       }
     } else {
+      const { clearSessionCookies } = await import('@server/services/session.service');
       clearSessionCookies(res, secure);
     }
-  }
-
-  if (isTokenEndpoint && upstream.ok) {
-    const text = await upstream.text();
-    let data: Record<string, unknown> | null = null;
-    try { data = JSON.parse(text) as Record<string, unknown>; } catch { data = null; }
-
-    if (data && (typeof data['access_token'] === 'string' || typeof data['refresh_token'] === 'string')) {
-      emitSessionCookies(res, data, secure);
-      // La respuesta al cliente sale SIN tokens: solo datos de negocio.
-      const { access_token: _a, refresh_token: _r, ...rest } = data;
-      res.status(upstream.status);
-      forwardHeaders(upstream, res);
-      res.send(JSON.stringify(rest));
-      return;
-    }
-
-    res.status(upstream.status);
-    forwardHeaders(upstream, res);
-    res.send(text);
-    return;
-  }
-
-  if (isLogout) {
-    clearSessionCookies(res, secure);
   }
 
   const text = await upstream.text();

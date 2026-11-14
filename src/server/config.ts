@@ -11,17 +11,19 @@
 function required(name: string): string {
   const value = process.env[name];
   if (!value) {
-    throw new Error(
-      `Falta la variable de entorno del servidor: ${name}. ` +
-      'Defínela en el .env del frontend (ver .env.demo).',
-    );
+    // Durante el build (extracción de rutas) las env vars pueden no estar
+    // cargadas aún. Se valida en runtime cuando el servidor arranca.
+    return '';
   }
   return value;
 }
 
-export const serverConfig = {
-  /** URL interna de la API FastAPI (no expuesta al navegador). */
-  apiUrl: required('API_URL'),
-  /** API Key que el BFF añade a cada llamada a FastAPI (nunca al navegador). */
-  apiKey: required('API_KEY'),
-} as const;
+// Proxy lazy: evalúa required() en cada acceso, no al importar el módulo.
+// Así el build no falla si las env vars no están seteadas aún.
+export const serverConfig = new Proxy({} as { apiUrl: string; apiKey: string }, {
+  get(_target, prop: string) {
+    if (prop === 'apiUrl') return required('API_URL');
+    if (prop === 'apiKey') return required('API_KEY');
+    return undefined;
+  },
+});

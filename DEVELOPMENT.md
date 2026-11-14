@@ -101,6 +101,7 @@ auth-frontend-angular/
 - [ ] `pnpm lint` (no existe; solo `ng build` + tests).
 - [ ] Limpiar `ApiService` (métodos muertos: `getById`, `update`, `delete`) y `message-error-component` (`text-white`).
 - [ ] El docstring de `auth-guard.ts` sigue describiendo la Fase 1 (presencia de sesión sin red, `authInterceptor`); el código ya es async contra `/auth/me`.
+- [ ] **Separar el proxy BFF en dos módulos**: `auth-proxy.ts` (auth: login, register, google, refresh, logout, me, con gestión de cookies HttpOnly) y `api-proxy.ts` (CRUD genérico: forwarding con Bearer, refresh-on-401, 502, CSRF, json-error). Hoy `api-proxy.ts` (150 líneas) mezcla ambas concerns. Patrón de referencia: drakkar (separa por servicio) y portfolio (proxy inline). Ver plan en `docs/auth-flow.md` §11.
 - [x] Fase 2 del BFF: sesión en cookies `HttpOnly`; tokens fuera del navegador; `auth-interceptor` retirado; `SameSite=Lax` (CSRF de doble envío pendiente).
 - [x] CSRF de doble envío: cookie legible `csrf_token` + cabecera `X-CSRF-Token` verificada por el BFF.
 

@@ -10,6 +10,7 @@ import { join } from 'node:path';
 // `env` va PRIMERO: deja process.env listo antes de que config lo lea.
 import '@server/env';
 import { apiProxy } from '@server/proxy/api-proxy';
+import { authProxy } from '@server/proxy/auth-proxy';
 import { environment } from '@environments/environment';
 import { generateNonce, buildCsp, injectNonce } from '@server/middleware/csp';
 import { getAllowedHosts } from '@server/middleware/allowed-hosts';
@@ -28,6 +29,9 @@ const isProd = process.env['PRODUCTION'] === 'true';
 // CSP con nonce (producción) y proxy /ssr-api que oculta la URL de la API.
 const apiPrefix = environment.apiUrl;
 app.use(apiPrefix, express.json());
+// /ssr-api/auth/* → auth-proxy (gestión de cookies, tokens, refresh, logout)
+// /ssr-api/*      → api-proxy (forwarding genérico, catch-all)
+app.use(`${apiPrefix}/auth`, authProxy);
 app.use(apiPrefix, apiProxy);
 // [BFF] ── Fin del código propio ────────────────────────────────────────────
 
