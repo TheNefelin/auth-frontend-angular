@@ -5,26 +5,29 @@
 
 ## Tarea activa
 
-Refactor del BFF (`/server`): separación de responsabilidades sin cambiar contratos HTTP.
+MVP completo y verificado. Última tarea: separar el proxy BFF en `auth-proxy.ts` + `api-proxy.ts` y corregir el host validation (fail-closed).
 
 ## Último avance comprobado
 
-- **Refactor del BFF** (sesión actual): `api-proxy.ts` delgado; módulos `http/cookies.ts`, `http/proxy-headers.ts`, `middleware/csrf.ts`, `middleware/json-error.ts`, `services/session.service.ts`.
-- **Endurecimiento 1–3**: `expires_in` saneado (`ttl()` finito/positivo), body JSON inválido → 400 JSON (`malformed-json`), `refreshSession` con `AbortSignal.timeout(5000)`.
-- Upstream inalcanzable → 502 JSON; sin doble Content-Security-Policy en `server.ts`.
-- **Verificado**: `ng build` OK, `ng test` **27/27**.
-
-## Archivos tocados
-
-- `src/server.ts`, `src/server/proxy/api-proxy.ts`
-- Nuevos: `src/server/http/` (cookies, proxy-headers), `src/server/middleware/` (csrf, json-error), `src/server/services/` (session)
-- Specs BFF: `http/cookies.spec.ts`, `middleware/csrf.spec.ts`, `middleware/json-error.spec.ts`, `services/session.service.spec.ts`
+- **Proxy BFF separado**: `auth-proxy.ts` (auth: login, register, google, refresh, logout, me, con cookies HttpOnly) + `api-proxy.ts` (CRUD genérico: forwarding, refresh-on-401, 502, CSRF, json-error). `server.ts` monta `authProxy` en `/auth` antes del catch-all `apiProxy`.
+- **Host validation seguro**: `allowed-hosts.ts` lee `NG_ALLOWED_HOSTS` de env; fail-closed (sin fallback inseguro). `server.ts` usa `getAllowedHosts()`.
+- **Config override**: `env.ts` carga `.env` siempre y sobrescribe variables del sistema (fix de "API Key inválida").
+- **Handler refactorizado**: lógica de CSP (nonce) extraída a middleware + helper `sendHtmlWithNonce`. Handler queda en ~12 líneas (scaffold + llamada condicional).
+- **Docstrings corregidos**: `auth-guard.ts` (async contra `/auth/me`) y `app.routes.server.ts` (cookies HttpOnly, no localStorage).
+- **Verificado**: `ng build` OK (8.6s), `ng test` **27/27**.
 
 ## Pendientes
 
-- Actualizar `DEVELOPMENT.md` (estructura `/server` y estado del guard): ✅ hecho en la última sesión.
-- Pendientes de producto: GitHub/Apple, `/auth/connect`, MFA/2FA, verificación de email.
+- GitHub / Apple (stubs en botones; falta `auth-<provider>-service.ts`).
+- `/auth/connect` + `/auth/unlink` (unificar cuentas).
+- Verificación de email real.
+- MFA/2FA (código TOTP en frontend).
+- Cambio de correo/contraseña y flujo "olvidé contraseña".
+- Lint (eslint + @angular-eslint) y script `pnpm lint`.
+- Limpiar `ApiService` (métodos muertos) y `message-error-component` (`text-white`).
+- Tests E2E del flujo completo.
+- Allowlist de rutas en el proxy genérico (cuando haya CRUD).
 
-## Siguiente paso
+## Nota
 
-- MVP sigue en estado verificado; siguiente según prioridad del usuario (GitHub/Apple, `/auth/connect`, MFA, verificación de email).
+`allowedHosts` en `angular.json` sigue en `[]` (dev server). En producción, `server.ts` lee `NG_ALLOWED_HOSTS` de env (fail-closed). Para dev local, setear `NG_ALLOWED_HOSTS=localhost,127.0.0.1` en `.env`.

@@ -101,7 +101,46 @@ auth-frontend-angular/
 - [ ] `pnpm lint` (no existe; solo `ng build` + tests).
 - [ ] Limpiar `ApiService` (métodos muertos: `getById`, `update`, `delete`) y `message-error-component` (`text-white`).
 - [ ] El docstring de `auth-guard.ts` sigue describiendo la Fase 1 (presencia de sesión sin red, `authInterceptor`); el código ya es async contra `/auth/me`.
-- [ ] **Separar el proxy BFF en dos módulos**: `auth-proxy.ts` (auth: login, register, google, refresh, logout, me, con gestión de cookies HttpOnly) y `api-proxy.ts` (CRUD genérico: forwarding con Bearer, refresh-on-401, 502, CSRF, json-error). Hoy `api-proxy.ts` (150 líneas) mezcla ambas concerns. Patrón de referencia: drakkar (separa por servicio) y portfolio (proxy inline). Ver plan en `docs/auth-flow.md` §11.
+- [x] **Separar el proxy BFF en dos módulos** (implementado): `auth-proxy.ts` (auth) + `api-proxy.ts` (CRUD genérico). Ver `docs/auth-flow.md` §11.
+- [ ] **Lint**: instalar `eslint` + `@angular-eslint` y añadir script `pnpm lint` (catálogo §8 lo exige; hoy solo `ng build` + tests).
+- [ ] **Limpiar `ApiService`**: métodos muertos (`getById`, `update`, `delete`) y `message-error-component` (`text-white`).
+- [ ] **Tests E2E del flujo completo**: register → login → refresh → logout (hoy solo unitarios).
+- [ ] **`pnpm lint` en CI**: añadir al flujo de verificación.
+
+### Listo para CRUD
+- [x] Feature-based (`features/<dominio>/` con pages, components, services, models, routes).
+- [x] Estado con signals, sin `subscribe()` en componentes.
+- [x] `rxResource` para lecturas (`isLoading`/`error`/`value` gratis).
+- [x] `OnPush` en componentes presentacionales.
+- [x] Sin `NgModule`, sin `*ngIf`/`*ngFor` (control flow `@if`/`@for`).
+- [x] Página orquesta (llama al servicio + store + navega); componente presentacional emite.
+- [x] `AuthService` solo HTTP; nunca navega ni toca el store.
+- [x] URL base del cliente: `environment.apiUrl = '/ssr-api'` (mismo origen).
+- [x] BFF modular: `http/`, `middleware/`, `services/`, `proxy/`.
+- [x] BFF: cookies `HttpOnly`, CSRF de doble envío, CSP con nonces.
+- [x] `auth-proxy` y `api-proxy` separados (auth vs CRUD genérico).
+- [x] `allowedHosts` seguro (fail-closed, lee `NG_ALLOWED_HOSTS`).
+- [ ] **Nuevo feature CRUD**: crear `src/app/features/<dominio>/` con pages, components, services, models, routes. Reutilizar `ApiService` (o un servicio específico) y el `api-proxy` genérico. Sin `subscribe()` en componentes, `OnPush` en presentacionales.
+- [x] **Separar el proxy BFF en dos módulos**: `auth-proxy.ts` (auth: login, register, google, refresh, logout, me, con gestión de cookies HttpOnly) y `api-proxy.ts` (CRUD genérico: forwarding con Bearer, refresh-on-401, 502, CSRF, json-error). Hoy `api-proxy.ts` (150 líneas) mezcla ambas concerns. Patrón de referencia: drakkar (separa por servicio) y portfolio (proxy inline). Ver plan en `docs/auth-flow.md` §11. **Implementado en esta sesión.**
+- [ ] **Lint**: instalar `eslint` + `@angular-eslint` y añadir script `pnpm lint` (catálogo §8 lo exige; hoy solo `ng build` + tests).
+- [ ] **Limpiar `ApiService`**: métodos muertos (`getById`, `update`, `delete`) y `message-error-component` (`text-white`).
+- [ ] **Tests E2E del flujo completo**: register → login → refresh → logout (hoy solo unitarios).
+- [ ] **`pnpm lint` en CI**: añadir al flujo de verificación.
+
+### Listo para CRUD
+- [x] Feature-based (`features/<dominio>/` con pages, components, services, models, routes).
+- [x] Estado con signals, sin `subscribe()` en componentes.
+- [x] `rxResource` para lecturas (`isLoading`/`error`/`value` gratis).
+- [x] `OnPush` en componentes presentacionales.
+- [x] Sin `NgModule`, sin `*ngIf`/`*ngFor` (control flow `@if`/`@for`).
+- [x] Página orquesta (llama al servicio + store + navega); componente presentacional emite.
+- [x] `AuthService` solo HTTP; nunca navega ni toca el store.
+- [x] URL base del cliente: `environment.apiUrl = '/ssr-api'` (mismo origen).
+- [x] BFF modular: `http/`, `middleware/`, `services/`, `proxy/`.
+- [x] BFF: cookies `HttpOnly`, CSRF de doble envío, CSP con nonces.
+- [x] `auth-proxy` y `api-proxy` separados (auth vs CRUD genérico).
+- [x] `allowedHosts` seguro (fail-closed, lee `NG_ALLOWED_HOSTS`).
+- [ ] **Nuevo feature CRUD**: crear `src/app/features/<dominio>/` con pages, components, services, models, routes. Reutilizar `ApiService` (o un servicio específico) y el `api-proxy` genérico. Sin `subscribe()` en componentes, `OnPush` en presentacionales.
 - [x] Fase 2 del BFF: sesión en cookies `HttpOnly`; tokens fuera del navegador; `auth-interceptor` retirado; `SameSite=Lax` (CSRF de doble envío pendiente).
 - [x] CSRF de doble envío: cookie legible `csrf_token` + cabecera `X-CSRF-Token` verificada por el BFF.
 

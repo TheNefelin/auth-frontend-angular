@@ -47,7 +47,6 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
-!.env.demo
 !.env.example
 
 # agent-baseline: respaldos de reinstalacion
