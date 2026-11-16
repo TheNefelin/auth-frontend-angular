@@ -5,7 +5,7 @@ import { take } from "rxjs";
 import { ROUTES_CONSTANTS } from "@shared/constants/routes-constant";
 import { AuthStoreService } from "@core/services/auth-store-service";
 import { AuthService } from "@features/auth/services/auth-service";
-import { UserDetailsComponent } from "@features/home/components/user-details-component/user-details-component";
+import { UserDetailsComponent } from "@features/auth/components/user-details-component/user-details-component";
 
 @Component({
   imports: [UserDetailsComponent],

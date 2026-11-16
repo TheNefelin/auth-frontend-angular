@@ -3,14 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiService } from '@core/services/api-service';
-import { environment } from '@environments/environment';
-import {
-  ApiAuthGoogleRequest,
-  ApiAuthLoginRequest,
-  ApiAuthRegisterRequest,
-  RegisterForm,
-} from '@features/auth/models/models';
-import type { UserProfile } from '@core/models/user-profile';
+import { ApiAuthGoogleRequest, ApiAuthLoginRequest, ApiAuthRegisterRequest, RegisterForm, UserProfile } from '@features/auth/models/models';
+
 
 @Service()
 export class AuthService {
