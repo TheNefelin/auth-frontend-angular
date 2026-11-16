@@ -1,8 +1,8 @@
 {
     "schemaVersion":  1,
-    "baselineVersion":  "0.4.0",
+    "baselineVersion":  "0.4.1",
     "mode":  "local",
-    "installedAt":  "2026-11-13T00:23:53.5396403-03:00",
+    "installedAt":  "2026-11-14T15:46:04.7334375-03:00",
     "skills":  [
                    "memoria",
                    "angular"
@@ -17,18 +17,18 @@
                     ],
     "files":  {
                   ".baseline/AGENTS.md":  "CA31CD3AB92865218188C9707F62D4D7AA624B200B949E62D61A8DF9F791EBE6",
-                  ".baseline/session.md":  "D58977E8AAD0891916A2A9BF6A0E6707C738BE0E3B33D005E808DB2CF948F2B1",
-                  ".baseline/skills/angular/references/auth.md":  "F2002F0BFF940F81D4F2CD437C38B375614E3A6AC64F032EF9C4C3DF71BA6781",
+                  ".baseline/session.md":  "BC224DF5C0A807A1CC9E769B784434578D775BD27E7DF5EA42430A8C4EB8C0F0",
+                  ".baseline/skills/angular/references/auth.md":  "9877963A357D78E7F1C7B3B476C069EEC10BBE5AD3295D7EBADC475F3BA297EE",
                   ".baseline/skills/angular/references/componentes-select.md":  "15D3BA03916B371D71859EF690057E66902420AC8CF6988949058EC164CA4F07",
                   ".baseline/skills/angular/references/crud-page.md":  "7B5F68803B1C18253D9E39442B4E919455AF86486AC73B0B38E1080571520006",
                   ".baseline/skills/angular/references/ejemplo-referencia.md":  "4E900A5C7C0A700FA96D356B89FF56EBF5C69F4E67D3120254CAB398365BFC94",
                   ".baseline/skills/angular/references/feedback.md":  "EDA14CC8A989E81BA840CA789E80676F1A08FF2648D30ABA5D3C41784C90AEFF",
                   ".baseline/skills/angular/references/filtro-catalogo.md":  "8255A1E249002334E5D22152F5D5F89984D7DFB360BF0939EF2D9CA04135A528",
-                  ".baseline/skills/angular/references/ssr.md":  "6D95B1B0DB8AA54317C41730FF43D5D25B5D9A222CCD90D94976622A144F0008",
+                  ".baseline/skills/angular/references/ssr.md":  "AC7E065D39960AB07642D08CFFE73A55F4E3AF7E3A8753835C3D61192033576F",
                   ".baseline/skills/angular/SKILL.md":  "EB066DAD7C8EBAD1100A3F6E7C7C1C767BEE772B285B81465CDD1E54E6E8D79D",
                   ".baseline/skills/gitkeep":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
                   ".baseline/skills/memoria/SKILL.md":  "929E9B06B577A7CF71021C0EED501EBF35627BAE11DDB5E9A9EE946FF8D4D1D4",
                   ".baseline/skills/SKILL.md":  "9E768FAF815807060B1A4CE4BBC1A8FE4F3C6E3315B37616669E59CF89924453",
-                  ".baseline/VERSION":  "CD78534ED15AD46912B71339D1417D0D043D8309C2B94415F3ED1B9D1FDFAED0"
+                  ".baseline/VERSION":  "0C236D864DB6A03CB9DAAC14E09AD97E59BE4AF2B47C5BDBC028DED74F6B291E"
               }
 }
